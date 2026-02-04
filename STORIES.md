@@ -130,98 +130,98 @@ Complete breakdown of all work required to ship FlowSplit.
 ## Epic 3: Feature Components
 
 ### 3.1 Amount & Input Components
-- [ ] **STORY-029**: Create `AmountDisplay` component
+- [x] **STORY-029**: Create `AmountDisplay` component
   - Large amount format ($1,200.00)
   - Size variants: large (60px), medium, small
   - Cursor blink animation for editable mode
 
-- [ ] **STORY-030**: Create `AmountInput` component
+- [x] **STORY-030**: Create `AmountInput` component
   - Numeric keyboard input
   - Currency formatting
   - Validation (min/max)
   - Error state display
 
 ### 3.2 Account Components
-- [ ] **STORY-031**: Create `AccountCard` component
+- [x] **STORY-031**: Create `AccountCard` component
   - Bank icon/logo
   - Account name + type
   - Masked account number (••4821)
   - Selected/unselected states
 
-- [ ] **STORY-032**: Create `AccountSelector` component
+- [x] **STORY-032**: Create `AccountSelector` component
   - List of AccountCards
   - Single selection
   - "Add new" dashed button
 
 ### 3.3 Bucket Components
-- [ ] **STORY-033**: Create `BucketCard` component (simple)
+- [x] **STORY-033**: Create `BucketCard` component (simple)
   - Color dot
   - Name + percentage + amount
   - Compact horizontal layout
 
-- [ ] **STORY-034**: Create `BucketConfigCard` component (expanded)
+- [x] **STORY-034**: Create `BucketConfigCard` component (expanded)
   - Icon with colored background
   - Name + allocation percentage
   - Destination row with bank/link info
   - More menu (3 dots)
   - Error state with reconnect CTA
 
-- [ ] **STORY-035**: Create `AddBucketButton` component
+- [x] **STORY-035**: Create `AddBucketButton` component
   - Dashed border style
   - Plus icon + label
   - Hover state
 
 ### 3.4 Distribution Components
-- [ ] **STORY-036**: Create `DistributionItem` component
+- [x] **STORY-036**: Create `DistributionItem` component
   - Color dot
   - Bucket name + destination
   - Amount + percentage
   - Status badge (for complete screen)
   - Error state with inline CTA
 
-- [ ] **STORY-037**: Create `RemainderCard` component
+- [x] **STORY-037**: Create `RemainderCard` component
   - Dashed border variant
   - Wallet icon
   - "Stays in checking" label
   - Amount display
 
 ### 3.5 Donut Chart Components
-- [ ] **STORY-038**: Create `DonutChart` container component
+- [x] **STORY-038**: Create `DonutChart` container component
   - SVG setup (viewBox 100x100)
   - Center content slot
   - Segment + handle rendering
 
-- [ ] **STORY-039**: Create `DonutSegment` component
+- [x] **STORY-039**: Create `DonutSegment` component
   - Arc calculation from percentage
   - Stroke styling (width 12, hover 14)
   - Color prop
 
-- [ ] **STORY-040**: Create `DonutHandle` component
+- [x] **STORY-040**: Create `DonutHandle` component
   - Circle at segment boundary
   - Drag gesture handling
   - Scale animation on grab
 
-- [ ] **STORY-041**: Create `useDonutChart` hook
+- [x] **STORY-041**: Create `useDonutChart` hook
   - Split points state management
   - Drag gesture logic (pan responder)
   - Percentage calculations
   - Constraints (min segment size)
 
-- [ ] **STORY-042**: Create `DonutSkeleton` component
+- [x] **STORY-042**: Create `DonutSkeleton` component
   - Gray circle with shimmer
   - "Calculating..." center text
 
 ### 3.6 Success/Status Components
-- [ ] **STORY-043**: Create `SuccessIcon` component
+- [x] **STORY-043**: Create `SuccessIcon` component
   - Outer ring (light teal)
   - Inner circle (teal with shadow)
   - Animated checkmark draw
 
-- [ ] **STORY-044**: Create `PartialSuccessIcon` component
+- [x] **STORY-044**: Create `PartialSuccessIcon` component
   - Amber variant of SuccessIcon
   - Alert triangle icon
 
-- [ ] **STORY-045**: Create `ProcessingIcon` component
+- [x] **STORY-045**: Create `ProcessingIcon` component
   - Amber background
   - Spinning refresh icon
 
