@@ -56,70 +56,70 @@ Complete breakdown of all work required to ship FlowSplit.
   - Spring configs for gestures
 
 ### 2.2 Base UI Components
-- [ ] **STORY-017**: Create `Button` component
+- [x] **STORY-017**: Create `Button` component
   - Variants: primary, secondary, ghost, danger
   - States: default, pressed, disabled, loading
   - Press animation: scale(0.98)
 
-- [ ] **STORY-018**: Create `Card` component
+- [x] **STORY-018**: Create `Card` component
   - Variants: default (16px radius), large (32px radius), muted
   - Border subtle styling
   - Custom shadow
 
-- [ ] **STORY-019**: Create `Header` component
+- [x] **STORY-019**: Create `Header` component
   - Fixed 64px height
   - Back button (optional)
   - Title centered
   - Right action (menu/settings)
   - Sticky positioning
 
-- [ ] **STORY-020**: Create `BottomActionBar` component
+- [x] **STORY-020**: Create `BottomActionBar` component
   - Fixed bottom positioning
   - Backdrop blur
   - Shadow
   - Safe area padding (34px)
   - Slot for primary button + secondary link
 
-- [ ] **STORY-021**: Create `TabBar` component
+- [x] **STORY-021**: Create `TabBar` component
   - 3 tabs: Split, Buckets, History
   - Active/inactive states
   - Icon + label layout
 
-- [ ] **STORY-022**: Create `SectionLabel` component
+- [x] **STORY-022**: Create `SectionLabel` component
   - Uppercase styling
   - Letter spacing
   - Gray-400 color
 
 ### 2.3 State Components
-- [ ] **STORY-023**: Create `Skeleton` component
+- [x] **STORY-023**: Create `Skeleton` component
   - Variants: text, circular, rectangular
   - Width/height props
   - Shimmer animation with gradient overlay
 
-- [ ] **STORY-024**: Create `ErrorBanner` component
+- [x] **STORY-024**: Create `ErrorBanner` component
   - Red/amber variants
   - Icon + title + description
   - Optional action button
   - Dismissible option
 
-- [ ] **STORY-025**: Create `StatusBadge` component
+- [x] **STORY-025**: Create `StatusBadge` component
   - Status types: success, failed, pending, retrying, manual
   - Uppercase text
   - Color-coded dot/icon
 
-- [ ] **STORY-026**: Create `ErrorModal` component
+- [x] **STORY-026**: Create `ErrorModal` component
   - Overlay with backdrop blur
   - Centered card with icon
   - Title + description
   - Primary + secondary actions
 
-- [ ] **STORY-027**: Create `EmptyState` component
+- [x] **STORY-027**: Create `EmptyState` component
   - Centered layout
   - Large icon
   - Title + description
   - CTA button
 
-- [ ] **STORY-028**: Create `ActionCard` component
+- [x] **STORY-028**: Create `ActionCard` component
   - Amber styling for manual actions
   - External link button
   - Copy link field
