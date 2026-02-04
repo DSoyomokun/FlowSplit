@@ -44,7 +44,10 @@ class Settings(BaseSettings):
     # Plaid (for bank connections)
     plaid_client_id: str = ""
     plaid_secret: str = ""
-    plaid_env: str = "sandbox"
+    plaid_environment: str = "sandbox"  # sandbox, development, production
+
+    # Pushpay (for external giving)
+    pushpay_api_key: str = ""
 
 
 @lru_cache

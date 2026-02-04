@@ -60,3 +60,37 @@ class SplitPlanPreview(BaseModel):
     deposit_id: str
     total_amount: float
     actions: list[SplitActionBase]
+
+
+class ActionExecutionResult(BaseModel):
+    """Result of executing a single split action."""
+    action_id: str
+    bucket_id: str
+    status: str  # pending, processing, completed, failed, manual_required
+    amount: float
+    error: str | None = None
+    external_url: str | None = None
+    transaction_id: str | None = None
+
+
+class SplitExecutionResponse(BaseModel):
+    """Response from split plan execution."""
+    plan_id: str
+    status: str
+    total_amount: float
+    completed_amount: float
+    failed_amount: float
+    manual_amount: float
+    action_results: list[ActionExecutionResult]
+    completed_at: datetime | None = None
+
+    @property
+    def is_complete(self) -> bool:
+        return all(
+            r.status in ("completed", "manual_required")
+            for r in self.action_results
+        )
+
+    @property
+    def has_failures(self) -> bool:
+        return any(r.status == "failed" for r in self.action_results)
