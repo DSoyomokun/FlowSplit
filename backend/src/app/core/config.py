@@ -15,6 +15,16 @@ class Settings(BaseSettings):
     debug: bool = False
     api_v1_prefix: str = "/api/v1"
 
+    # CORS - comma-separated list of allowed origins
+    # Use "*" for development, specific origins for production
+    cors_origins: str = "*"
+
+    @property
+    def cors_origins_list(self) -> list[str]:
+        if self.cors_origins == "*":
+            return ["*"]
+        return [origin.strip() for origin in self.cors_origins.split(",")]
+
     # Supabase
     supabase_url: str = ""
     supabase_anon_key: str = ""
