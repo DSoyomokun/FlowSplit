@@ -56,70 +56,70 @@ Complete breakdown of all work required to ship FlowSplit.
   - Spring configs for gestures
 
 ### 2.2 Base UI Components
-- [x] **STORY-017**: Create `Button` component
+- [ ] **STORY-017**: Create `Button` component
   - Variants: primary, secondary, ghost, danger
   - States: default, pressed, disabled, loading
   - Press animation: scale(0.98)
 
-- [x] **STORY-018**: Create `Card` component
+- [ ] **STORY-018**: Create `Card` component
   - Variants: default (16px radius), large (32px radius), muted
   - Border subtle styling
   - Custom shadow
 
-- [x] **STORY-019**: Create `Header` component
+- [ ] **STORY-019**: Create `Header` component
   - Fixed 64px height
   - Back button (optional)
   - Title centered
   - Right action (menu/settings)
   - Sticky positioning
 
-- [x] **STORY-020**: Create `BottomActionBar` component
+- [ ] **STORY-020**: Create `BottomActionBar` component
   - Fixed bottom positioning
   - Backdrop blur
   - Shadow
   - Safe area padding (34px)
   - Slot for primary button + secondary link
 
-- [x] **STORY-021**: Create `TabBar` component
+- [ ] **STORY-021**: Create `TabBar` component
   - 3 tabs: Split, Buckets, History
   - Active/inactive states
   - Icon + label layout
 
-- [x] **STORY-022**: Create `SectionLabel` component
+- [ ] **STORY-022**: Create `SectionLabel` component
   - Uppercase styling
   - Letter spacing
   - Gray-400 color
 
 ### 2.3 State Components
-- [x] **STORY-023**: Create `Skeleton` component
+- [ ] **STORY-023**: Create `Skeleton` component
   - Variants: text, circular, rectangular
   - Width/height props
   - Shimmer animation with gradient overlay
 
-- [x] **STORY-024**: Create `ErrorBanner` component
+- [ ] **STORY-024**: Create `ErrorBanner` component
   - Red/amber variants
   - Icon + title + description
   - Optional action button
   - Dismissible option
 
-- [x] **STORY-025**: Create `StatusBadge` component
+- [ ] **STORY-025**: Create `StatusBadge` component
   - Status types: success, failed, pending, retrying, manual
   - Uppercase text
   - Color-coded dot/icon
 
-- [x] **STORY-026**: Create `ErrorModal` component
+- [ ] **STORY-026**: Create `ErrorModal` component
   - Overlay with backdrop blur
   - Centered card with icon
   - Title + description
   - Primary + secondary actions
 
-- [x] **STORY-027**: Create `EmptyState` component
+- [ ] **STORY-027**: Create `EmptyState` component
   - Centered layout
   - Large icon
   - Title + description
   - CTA button
 
-- [x] **STORY-028**: Create `ActionCard` component
+- [ ] **STORY-028**: Create `ActionCard` component
   - Amber styling for manual actions
   - External link button
   - Copy link field
@@ -130,98 +130,98 @@ Complete breakdown of all work required to ship FlowSplit.
 ## Epic 3: Feature Components
 
 ### 3.1 Amount & Input Components
-- [x] **STORY-029**: Create `AmountDisplay` component
+- [ ] **STORY-029**: Create `AmountDisplay` component
   - Large amount format ($1,200.00)
   - Size variants: large (60px), medium, small
   - Cursor blink animation for editable mode
 
-- [x] **STORY-030**: Create `AmountInput` component
+- [ ] **STORY-030**: Create `AmountInput` component
   - Numeric keyboard input
   - Currency formatting
   - Validation (min/max)
   - Error state display
 
 ### 3.2 Account Components
-- [x] **STORY-031**: Create `AccountCard` component
+- [ ] **STORY-031**: Create `AccountCard` component
   - Bank icon/logo
   - Account name + type
   - Masked account number (••4821)
   - Selected/unselected states
 
-- [x] **STORY-032**: Create `AccountSelector` component
+- [ ] **STORY-032**: Create `AccountSelector` component
   - List of AccountCards
   - Single selection
   - "Add new" dashed button
 
 ### 3.3 Bucket Components
-- [x] **STORY-033**: Create `BucketCard` component (simple)
+- [ ] **STORY-033**: Create `BucketCard` component (simple)
   - Color dot
   - Name + percentage + amount
   - Compact horizontal layout
 
-- [x] **STORY-034**: Create `BucketConfigCard` component (expanded)
+- [ ] **STORY-034**: Create `BucketConfigCard` component (expanded)
   - Icon with colored background
   - Name + allocation percentage
   - Destination row with bank/link info
   - More menu (3 dots)
   - Error state with reconnect CTA
 
-- [x] **STORY-035**: Create `AddBucketButton` component
+- [ ] **STORY-035**: Create `AddBucketButton` component
   - Dashed border style
   - Plus icon + label
   - Hover state
 
 ### 3.4 Distribution Components
-- [x] **STORY-036**: Create `DistributionItem` component
+- [ ] **STORY-036**: Create `DistributionItem` component
   - Color dot
   - Bucket name + destination
   - Amount + percentage
   - Status badge (for complete screen)
   - Error state with inline CTA
 
-- [x] **STORY-037**: Create `RemainderCard` component
+- [ ] **STORY-037**: Create `RemainderCard` component
   - Dashed border variant
   - Wallet icon
   - "Stays in checking" label
   - Amount display
 
 ### 3.5 Donut Chart Components
-- [x] **STORY-038**: Create `DonutChart` container component
+- [ ] **STORY-038**: Create `DonutChart` container component
   - SVG setup (viewBox 100x100)
   - Center content slot
   - Segment + handle rendering
 
-- [x] **STORY-039**: Create `DonutSegment` component
+- [ ] **STORY-039**: Create `DonutSegment` component
   - Arc calculation from percentage
   - Stroke styling (width 12, hover 14)
   - Color prop
 
-- [x] **STORY-040**: Create `DonutHandle` component
+- [ ] **STORY-040**: Create `DonutHandle` component
   - Circle at segment boundary
   - Drag gesture handling
   - Scale animation on grab
 
-- [x] **STORY-041**: Create `useDonutChart` hook
+- [ ] **STORY-041**: Create `useDonutChart` hook
   - Split points state management
   - Drag gesture logic (pan responder)
   - Percentage calculations
   - Constraints (min segment size)
 
-- [x] **STORY-042**: Create `DonutSkeleton` component
+- [ ] **STORY-042**: Create `DonutSkeleton` component
   - Gray circle with shimmer
   - "Calculating..." center text
 
 ### 3.6 Success/Status Components
-- [x] **STORY-043**: Create `SuccessIcon` component
+- [ ] **STORY-043**: Create `SuccessIcon` component
   - Outer ring (light teal)
   - Inner circle (teal with shadow)
   - Animated checkmark draw
 
-- [x] **STORY-044**: Create `PartialSuccessIcon` component
+- [ ] **STORY-044**: Create `PartialSuccessIcon` component
   - Amber variant of SuccessIcon
   - Alert triangle icon
 
-- [x] **STORY-045**: Create `ProcessingIcon` component
+- [ ] **STORY-045**: Create `ProcessingIcon` component
   - Amber background
   - Spinning refresh icon
 

@@ -88,6 +88,13 @@ export const Colors = {
   // Overlay
   overlay: 'rgba(0, 0, 0, 0.4)',
   overlayLight: 'rgba(0, 0, 0, 0.1)',
+
+  // Status colors (shorthand aliases)
+  status: {
+    success: '#10B981',
+    warning: '#F59E0B',
+    error: '#EF4444',
+  },
 } as const;
 
 // Type helper for bucket colors
@@ -98,3 +105,15 @@ export const getBucketColor = (index: number): string => {
   const colorKeys = Object.keys(Colors.bucket) as BucketColorKey[];
   return Colors.bucket[colorKeys[index % colorKeys.length]];
 };
+
+// Array of bucket colors for easy indexing
+export const BucketColors = [
+  '#0EA5A5', // Teal (primary)
+  '#3B82F6', // Blue
+  '#10B981', // Green
+  '#8B5CF6', // Purple
+  '#F59E0B', // Amber
+  '#EC4899', // Pink
+  '#06B6D4', // Cyan
+  '#F97316', // Orange
+];

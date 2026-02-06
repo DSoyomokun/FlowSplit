@@ -24,7 +24,7 @@ export default function TabsLayout() {
   if (isLoading) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color={Colors.primary.DEFAULT} />
+        <ActivityIndicator size="large" color={Colors.primary} />
       </View>
     );
   }
