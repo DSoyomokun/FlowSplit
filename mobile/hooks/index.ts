@@ -14,4 +14,5 @@ export { useSplitFlow } from './useSplitFlow';
 
 // Mutation hooks
 export { useBucketMutations } from './useBucketMutations';
+export { useDepositMutations } from './useDepositMutations';
 export { useSplitExecution, type ExecutionStatus } from './useSplitExecution';

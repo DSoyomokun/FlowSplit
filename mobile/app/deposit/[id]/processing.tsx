@@ -195,7 +195,7 @@ export default function ProcessingScreen() {
       case 'processing':
         return (
           <Animated.View style={{ transform: [{ rotate: spinInterpolation }] }}>
-            <Ionicons name="sync" size={18} color={Colors.primary.DEFAULT} />
+            <Ionicons name="sync" size={18} color={Colors.primary} />
           </Animated.View>
         );
       case 'complete':
@@ -216,7 +216,7 @@ export default function ProcessingScreen() {
             <Animated.View
               style={[styles.spinnerIcon, { transform: [{ rotate: spinInterpolation }] }]}
             >
-              <Ionicons name="sync" size={40} color={Colors.primary.DEFAULT} />
+              <Ionicons name="sync" size={40} color={Colors.primary} />
             </Animated.View>
           ) : overallStatus === 'partial' ? (
             <View style={styles.warningIcon}>
@@ -311,7 +311,7 @@ const styles = StyleSheet.create({
     width: 96,
     height: 96,
     borderRadius: 48,
-    backgroundColor: `${Colors.primary.DEFAULT}15`,
+    backgroundColor: `${Colors.primary}15`,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -327,10 +327,10 @@ const styles = StyleSheet.create({
     width: 96,
     height: 96,
     borderRadius: 48,
-    backgroundColor: Colors.primary.DEFAULT,
+    backgroundColor: Colors.primary,
     alignItems: 'center',
     justifyContent: 'center',
-    ...Shadows.button,
+    ...Shadows.buttonPrimary,
   },
   messageSection: {
     alignItems: 'center',

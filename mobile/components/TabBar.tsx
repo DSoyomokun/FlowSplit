@@ -4,7 +4,7 @@
  */
 
 import React from 'react';
-import { View, Text, StyleSheet, Pressable } from 'react-native';
+import { View, Text, StyleSheet, Pressable, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter, usePathname } from 'expo-router';
 import * as Haptics from 'expo-haptics';
@@ -67,7 +67,9 @@ export function TabBar({ activeTab, onTabPress }: TabBarProps) {
   const currentTab = getActiveTab();
 
   const handleTabPress = (tab: Tab) => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    if (Platform.OS !== 'web') {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    }
 
     if (onTabPress) {
       onTabPress(tab.id);

@@ -206,11 +206,13 @@ export default function BucketConfigurationScreen() {
           {/* Skeleton Bucket Cards */}
           <View style={styles.bucketList}>
             {[1, 2, 3].map((i) => (
-              <SkeletonCard key={i} height={140} />
+              <SkeletonCard key={i} />
             ))}
 
             {/* Disabled Add Button */}
-            <AddBucketButton disabled />
+            <View style={{ opacity: 0.5 }}>
+              <AddBucketButton onPress={() => {}} />
+            </View>
           </View>
         </ScrollView>
 
@@ -252,10 +254,9 @@ export default function BucketConfigurationScreen() {
           </View>
 
           {/* Empty State */}
-          <EmptyBuckets
-            onCreateBucket={handleCreateFirstBucket}
-            style={styles.emptyState}
-          />
+          <View style={styles.emptyState}>
+            <EmptyBuckets onCreateBucket={handleCreateFirstBucket} />
+          </View>
         </ScrollView>
 
         <BottomActionBar>

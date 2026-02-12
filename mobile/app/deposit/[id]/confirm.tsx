@@ -1,17 +1,19 @@
 /**
- * Confirmation Screen
- * Review and confirm split distribution before execution
+ * Split Confirmation Screen
+ * Review allocations before executing - matches Variants2/05-confirmation.html
  *
  * Stories: 58, 59, 60, 61
  */
 
-import React, { useState, useMemo } from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
   StyleSheet,
   ScrollView,
   Pressable,
+  Platform,
+  ActivityIndicator,
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -19,82 +21,56 @@ import * as Haptics from 'expo-haptics';
 import { Ionicons } from '@expo/vector-icons';
 
 import { Colors, BucketColors } from '@/constants/colors';
-import { FontFamily, FontSize } from '@/constants/typography';
-import { BorderRadius, Spacing, Size } from '@/constants/spacing';
+import { FontFamily, FontSize, LetterSpacing } from '@/constants/typography';
+import { BorderRadius, Spacing } from '@/constants/spacing';
 import { Shadows } from '@/constants/shadows';
-import {
-  Header,
-  Card,
-  Button,
-  BottomActionBar,
-} from '@/components';
+import { useDeposit, useBuckets, useSplitPlan } from '@/hooks';
 
-// Mock data for development
-const MOCK_DEPOSIT = {
-  amount: 1200,
-  sourceAccount: {
-    name: 'Chase Checking',
-    lastFour: '4920',
-  },
-  date: 'MAY 24, 2024',
-};
-
+// Mock data for testing
+const MOCK_DEPOSIT_AMOUNT = 1200;
 const MOCK_ALLOCATIONS = [
-  {
-    id: 'tithe',
-    name: 'Tithe',
-    destination: 'Transfer to Better Together',
-    amount: 120,
-    percentage: 10,
-    color: BucketColors[0],
-  },
-  {
-    id: 'savings',
-    name: 'Savings',
-    destination: 'High-Yield Savings ••0122',
-    amount: 180,
-    percentage: 15,
-    color: BucketColors[1],
-  },
-  {
-    id: 'investing',
-    name: 'Investing',
-    destination: 'Vanguard Brokerage ••8829',
-    amount: 120,
-    percentage: 10,
-    color: BucketColors[2],
-  },
+  { id: 'tithe', name: 'Tithe', amount: 120, percentage: 10, color: '#0EA5A5', destination: 'Transfer to Better Together' },
+  { id: 'savings', name: 'Savings', amount: 180, percentage: 15, color: '#3B82F6', destination: 'High-Yield Savings ••0122' },
+  { id: 'investing', name: 'Investing', amount: 120, percentage: 10, color: '#10B981', destination: 'Vanguard Brokerage ••8829' },
 ];
 
-interface AllocationItem {
-  id: string;
-  name: string;
-  destination: string;
-  amount: number;
-  percentage: number;
-  color: string;
-}
-
-export default function ConfirmationScreen() {
+export default function SplitConfirmScreen() {
   const router = useRouter();
   const { id: depositId } = useLocalSearchParams<{ id: string }>();
   const insets = useSafeAreaInsets();
 
-  // State
+  // Fetch data
+  const { deposit, isLoading: depositLoading } = useDeposit(depositId || '');
+  const { buckets, isLoading: bucketsLoading } = useBuckets();
+  const { plan, preview, isLoading: planLoading } = useSplitPlan(depositId || '');
+
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Calculated values
-  const totalAllocated = useMemo(() => {
-    return MOCK_ALLOCATIONS.reduce((sum, a) => sum + a.amount, 0);
-  }, []);
+  const isLoading = depositLoading || bucketsLoading || planLoading;
+  const depositAmount = deposit?.amount || preview?.total_amount || MOCK_DEPOSIT_AMOUNT;
 
-  const remainder = useMemo(() => {
-    return MOCK_DEPOSIT.amount - totalAllocated;
-  }, [totalAllocated]);
+  // Build allocation list
+  const planActions = plan?.actions || [];
+  const previewActions = preview?.actions || [];
+  const sourceActions = planActions.length > 0 ? planActions : previewActions;
 
-  const remainderPercentage = useMemo(() => {
-    return Math.round((remainder / MOCK_DEPOSIT.amount) * 100);
-  }, [remainder]);
+  const allocations = sourceActions.length > 0
+    ? sourceActions.map((action, index) => {
+        const bucket = buckets.find(b => b.id === action.bucket_id);
+        return {
+          id: action.bucket_id,
+          name: bucket?.name || 'Bucket',
+          amount: action.amount,
+          percentage: Math.round((action.amount / depositAmount) * 100),
+          color: bucket?.color || BucketColors[index % BucketColors.length],
+          destination: bucket?.name || 'Transfer',
+        };
+      })
+    : MOCK_ALLOCATIONS;
+
+  const totalAllocated = allocations.reduce((sum: number, a) => sum + a.amount, 0);
+  const remainder = depositAmount - totalAllocated;
+  const remainderPercentage = Math.round((remainder / depositAmount) * 100);
 
   // Format currency
   const formatCurrency = (amount: number) => {
@@ -105,103 +81,124 @@ export default function ConfirmationScreen() {
   };
 
   // Handlers
+  const handleBack = () => {
+    if (Platform.OS !== 'web') {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    }
+    router.back();
+  };
+
   const handleConfirm = async () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+    if (Platform.OS !== 'web') {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    }
     setIsSubmitting(true);
 
     try {
-      // TODO: Execute split via API
-      // Navigate to processing screen first, then complete
+      // Simulate API call
+      await new Promise(resolve => setTimeout(resolve, 500));
       router.push(`/deposit/${depositId}/processing`);
     } catch (error) {
       console.error('Failed to execute split:', error);
+    } finally {
       setIsSubmitting(false);
     }
   };
 
-  const handleBack = () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    router.back();
-  };
+  if (isLoading) {
+    return (
+      <View style={[styles.container, styles.loadingContainer]}>
+        <ActivityIndicator size="large" color={Colors.primary} />
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>
-      <Header showBack onBack={handleBack} />
+      {/* Header */}
+      <View style={styles.header}>
+        <Pressable onPress={handleBack} style={styles.headerButton}>
+          <Ionicons name="chevron-back" size={24} color={Colors.text.muted} />
+        </Pressable>
+        <Text style={styles.headerTitle}>FlowSplit</Text>
+        <View style={styles.headerButton} />
+      </View>
 
       <ScrollView
         style={styles.scrollView}
         contentContainerStyle={[
           styles.scrollContent,
-          { paddingBottom: Size.bottomBarHeight + insets.bottom + Spacing[8] },
+          { paddingBottom: 180 + insets.bottom },
         ]}
         showsVerticalScrollIndicator={false}
       >
-        {/* Page Title */}
+        {/* Title Section */}
         <View style={styles.titleSection}>
           <Text style={styles.title}>Review Split</Text>
-          <Text style={styles.subtitle}>
-            Confirm the distribution of your deposit
-          </Text>
+          <Text style={styles.subtitle}>Confirm the distribution of your deposit</Text>
         </View>
 
-        {/* Main Deposit Card */}
-        <Card variant="large" style={styles.depositCard}>
+        {/* Deposit Card */}
+        <View style={styles.depositCard}>
           <View style={styles.depositHeader}>
-            <View style={styles.depositIconContainer}>
-              <Ionicons
-                name="arrow-down"
-                size={24}
-                color={Colors.primary.DEFAULT}
-              />
+            <View style={styles.depositIcon}>
+              <Ionicons name="arrow-down" size={24} color={Colors.primary} />
             </View>
-            <View style={styles.depositInfo}>
+            <View>
               <Text style={styles.depositLabel}>INCOMING DEPOSIT</Text>
-              <Text style={styles.depositAmount}>
-                {formatCurrency(MOCK_DEPOSIT.amount)}
-              </Text>
+              <Text style={styles.depositAmount}>{formatCurrency(depositAmount)}</Text>
             </View>
           </View>
           <View style={styles.depositFooter}>
             <View style={styles.depositAccount}>
               <Ionicons name="business-outline" size={16} color={Colors.text.muted} />
-              <Text style={styles.depositAccountText}>
-                {MOCK_DEPOSIT.sourceAccount.name} ••{MOCK_DEPOSIT.sourceAccount.lastFour}
-              </Text>
+              <Text style={styles.depositAccountText}>Chase Checking ••4920</Text>
             </View>
-            <Text style={styles.depositDate}>{MOCK_DEPOSIT.date}</Text>
+            <Text style={styles.depositDate}>MAY 24, 2024</Text>
           </View>
-        </Card>
+        </View>
 
         {/* Distribution Section */}
         <View style={styles.distributionSection}>
           <Text style={styles.sectionLabel}>DISTRIBUTION</Text>
 
-          <View style={styles.allocationList}>
-            {MOCK_ALLOCATIONS.map((allocation) => (
-              <AllocationRow key={allocation.id} allocation={allocation} />
-            ))}
-
-            {/* Remainder Row */}
-            <View style={[styles.allocationRow, styles.remainderRow]}>
-              <View style={styles.allocationLeft}>
-                <View style={[styles.colorDot, styles.remainderDot]} />
-                <View>
-                  <Text style={styles.remainderName}>Remainder</Text>
-                  <Text style={styles.allocationDestination}>
-                    Stay in Chase Checking
-                  </Text>
+          <View style={styles.distributionList}>
+            {/* Allocations */}
+            {allocations.map((allocation) => (
+              <View key={allocation.id} style={styles.distributionCard}>
+                <View style={styles.distributionLeft}>
+                  <View style={[styles.colorDot, { backgroundColor: allocation.color }]} />
+                  <View>
+                    <Text style={styles.distributionName}>{allocation.name}</Text>
+                    <Text style={styles.distributionDestination}>{allocation.destination}</Text>
+                  </View>
+                </View>
+                <View style={styles.distributionRight}>
+                  <Text style={styles.distributionAmount}>{formatCurrency(allocation.amount)}</Text>
+                  <Text style={styles.distributionPercentage}>{allocation.percentage}%</Text>
                 </View>
               </View>
-              <View style={styles.allocationRight}>
+            ))}
+
+            {/* Remainder */}
+            <View style={styles.remainderCard}>
+              <View style={styles.distributionLeft}>
+                <View style={[styles.colorDot, { backgroundColor: Colors.gray[300] }]} />
+                <View>
+                  <Text style={styles.remainderName}>Remainder</Text>
+                  <Text style={styles.distributionDestination}>Stay in Chase Checking</Text>
+                </View>
+              </View>
+              <View style={styles.distributionRight}>
                 <Text style={styles.remainderAmount}>{formatCurrency(remainder)}</Text>
-                <Text style={styles.allocationPercentage}>{remainderPercentage}%</Text>
+                <Text style={styles.distributionPercentage}>{remainderPercentage}%</Text>
               </View>
             </View>
           </View>
         </View>
 
         {/* Details Card */}
-        <Card style={styles.detailsCard}>
+        <View style={styles.detailsCard}>
           <View style={styles.detailRow}>
             <Text style={styles.detailLabel}>Execution</Text>
             <Text style={styles.detailValue}>Instant (Estimated)</Text>
@@ -210,47 +207,30 @@ export default function ConfirmationScreen() {
             <Text style={styles.detailLabel}>Service Fees</Text>
             <Text style={styles.detailValue}>$0.00</Text>
           </View>
-          <View style={styles.totalRow}>
+          <View style={styles.detailDivider} />
+          <View style={styles.detailRow}>
             <Text style={styles.totalLabel}>Total Allocated</Text>
-            <Text style={styles.totalValue}>{formatCurrency(MOCK_DEPOSIT.amount)}</Text>
+            <Text style={styles.totalValue}>{formatCurrency(depositAmount)}</Text>
           </View>
-        </Card>
+        </View>
       </ScrollView>
 
       {/* Bottom Action Bar */}
-      <BottomActionBar>
-        <Button onPress={handleConfirm} loading={isSubmitting}>
-          Confirm & Distribute
-        </Button>
-        <Pressable onPress={handleBack} style={styles.backLink}>
-          <Text style={styles.backLinkText}>Back to adjustments</Text>
+      <View style={[styles.bottomBar, { paddingBottom: insets.bottom + 24 }]}>
+        <Pressable
+          style={[styles.primaryButton, isSubmitting && styles.buttonDisabled]}
+          onPress={handleConfirm}
+          disabled={isSubmitting}
+        >
+          {isSubmitting ? (
+            <ActivityIndicator color="white" />
+          ) : (
+            <Text style={styles.primaryButtonText}>Confirm & Distribute</Text>
+          )}
         </Pressable>
-      </BottomActionBar>
-    </View>
-  );
-}
-
-// Allocation Row Component
-function AllocationRow({ allocation }: { allocation: AllocationItem }) {
-  const formatCurrency = (amount: number) => {
-    return `$${amount.toLocaleString('en-US', {
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
-    })}`;
-  };
-
-  return (
-    <View style={styles.allocationRow}>
-      <View style={styles.allocationLeft}>
-        <View style={[styles.colorDot, { backgroundColor: allocation.color }]} />
-        <View>
-          <Text style={styles.allocationName}>{allocation.name}</Text>
-          <Text style={styles.allocationDestination}>{allocation.destination}</Text>
-        </View>
-      </View>
-      <View style={styles.allocationRight}>
-        <Text style={styles.allocationAmount}>{formatCurrency(allocation.amount)}</Text>
-        <Text style={styles.allocationPercentage}>{allocation.percentage}%</Text>
+        <Pressable onPress={handleBack} style={styles.secondaryButton}>
+          <Text style={styles.secondaryButtonText}>Back to adjustments</Text>
+        </Pressable>
       </View>
     </View>
   );
@@ -261,14 +241,46 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: Colors.background,
   },
+  loadingContainer: {
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+
+  // Header
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    height: 64,
+    paddingHorizontal: Spacing.page,
+    backgroundColor: Colors.card,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.gray[100],
+  },
+  headerButton: {
+    width: 32,
+    height: 32,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  headerTitle: {
+    fontFamily: FontFamily.bold,
+    fontSize: 18,
+    color: Colors.text.primary,
+    letterSpacing: -0.25,
+  },
+
+  // ScrollView
   scrollView: {
     flex: 1,
   },
   scrollContent: {
-    paddingHorizontal: Spacing.page,
     paddingTop: Spacing[6],
+    paddingHorizontal: Spacing.page,
     gap: Spacing[8],
   },
+
+  // Title Section
   titleSection: {
     gap: Spacing[1],
   },
@@ -282,8 +294,15 @@ const styles = StyleSheet.create({
     fontSize: FontSize.md,
     color: Colors.text.muted,
   },
+
+  // Deposit Card
   depositCard: {
+    backgroundColor: Colors.card,
+    borderRadius: BorderRadius.card,
     padding: Spacing[6],
+    borderWidth: 1,
+    borderColor: Colors.border.subtle,
+    ...Shadows.card,
   },
   depositHeader: {
     flexDirection: 'row',
@@ -291,23 +310,20 @@ const styles = StyleSheet.create({
     gap: Spacing[4],
     marginBottom: Spacing[4],
   },
-  depositIconContainer: {
+  depositIcon: {
     width: 48,
     height: 48,
-    borderRadius: BorderRadius.lg,
-    backgroundColor: `${Colors.primary.DEFAULT}15`,
+    borderRadius: BorderRadius.xl,
+    backgroundColor: `${Colors.primary}15`,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  depositInfo: {
-    flex: 1,
-  },
   depositLabel: {
     fontFamily: FontFamily.bold,
-    fontSize: FontSize.xs,
+    fontSize: FontSize.sm,
     color: Colors.text.muted,
-    letterSpacing: 1.5,
-    marginBottom: Spacing[1],
+    textTransform: 'uppercase',
+    letterSpacing: LetterSpacing.widest,
   },
   depositAmount: {
     fontFamily: FontFamily.bold,
@@ -320,7 +336,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingTop: Spacing[4],
     borderTopWidth: 1,
-    borderTopColor: Colors.border.light,
+    borderTopColor: Colors.gray[50],
   },
   depositAccount: {
     flexDirection: 'row',
@@ -329,15 +345,16 @@ const styles = StyleSheet.create({
   },
   depositAccountText: {
     fontFamily: FontFamily.medium,
-    fontSize: FontSize.sm,
+    fontSize: FontSize.base,
     color: Colors.text.muted,
   },
   depositDate: {
     fontFamily: FontFamily.bold,
     fontSize: FontSize.xs,
-    color: Colors.text.tertiary,
-    letterSpacing: 0.5,
+    color: Colors.text.light,
   },
+
+  // Distribution Section
   distributionSection: {
     gap: Spacing[4],
   },
@@ -345,28 +362,24 @@ const styles = StyleSheet.create({
     fontFamily: FontFamily.black,
     fontSize: FontSize.xs,
     color: Colors.text.muted,
-    letterSpacing: 2,
+    textTransform: 'uppercase',
+    letterSpacing: LetterSpacing.widest,
     paddingHorizontal: Spacing[1],
   },
-  allocationList: {
+  distributionList: {
     gap: Spacing[3],
   },
-  allocationRow: {
+  distributionCard: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: Colors.surface,
+    backgroundColor: Colors.card,
     padding: Spacing[4],
-    borderRadius: BorderRadius.lg,
+    borderRadius: BorderRadius.xl,
     borderWidth: 1,
     borderColor: Colors.border.subtle,
   },
-  remainderRow: {
-    backgroundColor: 'transparent',
-    borderStyle: 'dashed',
-    borderColor: Colors.border.default,
-  },
-  allocationLeft: {
+  distributionLeft: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: Spacing[3],
@@ -376,70 +389,84 @@ const styles = StyleSheet.create({
     height: 12,
     borderRadius: 6,
   },
-  remainderDot: {
-    backgroundColor: Colors.border.default,
-  },
-  allocationName: {
+  distributionName: {
     fontFamily: FontFamily.bold,
     fontSize: FontSize.md,
     color: Colors.text.secondary,
+  },
+  distributionDestination: {
+    fontFamily: FontFamily.regular,
+    fontSize: FontSize.xs,
+    color: Colors.text.muted,
+    marginTop: 2,
+  },
+  distributionRight: {
+    alignItems: 'flex-end',
+  },
+  distributionAmount: {
+    fontFamily: FontFamily.black,
+    fontSize: FontSize.md,
+    color: Colors.text.primary,
+  },
+  distributionPercentage: {
+    fontFamily: FontFamily.regular,
+    fontSize: FontSize.xs,
+    color: Colors.text.muted,
+    marginTop: 2,
+  },
+
+  // Remainder Card
+  remainderCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: 'rgba(255, 255, 255, 0.5)',
+    padding: Spacing[4],
+    borderRadius: BorderRadius.xl,
+    borderWidth: 1,
+    borderStyle: 'dashed',
+    borderColor: Colors.gray[200],
   },
   remainderName: {
     fontFamily: FontFamily.bold,
     fontSize: FontSize.md,
     color: Colors.text.muted,
   },
-  allocationDestination: {
-    fontFamily: FontFamily.regular,
-    fontSize: FontSize.xs,
-    color: Colors.text.muted,
-    marginTop: 2,
-  },
-  allocationRight: {
-    alignItems: 'flex-end',
-  },
-  allocationAmount: {
-    fontFamily: FontFamily.black,
-    fontSize: FontSize.md,
-    color: Colors.text.primary,
-  },
   remainderAmount: {
     fontFamily: FontFamily.black,
     fontSize: FontSize.md,
     color: Colors.text.muted,
   },
-  allocationPercentage: {
-    fontFamily: FontFamily.regular,
-    fontSize: FontSize.xs,
-    color: Colors.text.muted,
-    marginTop: 2,
-  },
+
+  // Details Card
   detailsCard: {
+    backgroundColor: Colors.card,
+    borderRadius: BorderRadius.xl,
     padding: Spacing[6],
-    gap: Spacing[4],
+    borderWidth: 1,
+    borderColor: Colors.border.subtle,
+    ...Shadows.card,
   },
   detailRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+    paddingVertical: Spacing[2],
   },
   detailLabel: {
     fontFamily: FontFamily.medium,
-    fontSize: FontSize.sm,
+    fontSize: FontSize.base,
     color: Colors.text.muted,
   },
   detailValue: {
     fontFamily: FontFamily.bold,
-    fontSize: FontSize.sm,
+    fontSize: FontSize.base,
     color: Colors.text.secondary,
   },
-  totalRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingTop: Spacing[4],
-    borderTopWidth: 1,
-    borderTopColor: Colors.border.light,
+  detailDivider: {
+    height: 1,
+    backgroundColor: Colors.gray[50],
+    marginVertical: Spacing[4],
   },
   totalLabel: {
     fontFamily: FontFamily.bold,
@@ -449,13 +476,44 @@ const styles = StyleSheet.create({
   totalValue: {
     fontFamily: FontFamily.black,
     fontSize: FontSize.lg,
-    color: Colors.primary.DEFAULT,
+    color: Colors.primary,
   },
-  backLink: {
+
+  // Bottom Bar
+  bottomBar: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: 'rgba(255, 255, 255, 0.95)',
+    borderTopWidth: 1,
+    borderTopColor: Colors.border.light,
+    paddingHorizontal: Spacing.page,
+    paddingTop: Spacing[6],
+    gap: Spacing[3],
+    ...Shadows.card,
+  },
+  primaryButton: {
+    backgroundColor: Colors.primary,
+    borderRadius: BorderRadius.xl,
+    height: 56,
     alignItems: 'center',
-    paddingVertical: Spacing[2],
+    justifyContent: 'center',
+    ...Shadows.buttonPrimary,
   },
-  backLinkText: {
+  buttonDisabled: {
+    opacity: 0.7,
+  },
+  primaryButtonText: {
+    fontFamily: FontFamily.bold,
+    fontSize: FontSize.md,
+    color: 'white',
+  },
+  secondaryButton: {
+    paddingVertical: Spacing[2],
+    alignItems: 'center',
+  },
+  secondaryButtonText: {
     fontFamily: FontFamily.medium,
     fontSize: FontSize.md,
     color: Colors.text.muted,

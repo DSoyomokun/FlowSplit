@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="view-transition" content="same-origin">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://code.iconify.design/iconify-icon/1.0.7/iconify-icon.min.js"></script>
+  <style>
+    @import url('https://api.fontshare.com/v2/css?f[]=satoshi@900,700,500,400&display=swap');
+    
+    body {
+      font-family: 'Satoshi', sans-serif;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+
+    .teal-accent { color: #0EA5A5; }
+    .bg-teal-accent { background-color: #0EA5A5; }
+    .border-subtle { border: 1px solid rgba(0, 0, 0, 0.04); }
+
+    html {
+        background-color: #F8F8F8;
+    }
+    @view-transition {
+        navigation: auto;
+    }
+
+    .shimmer-bg {
+      background: linear-gradient(90deg, #f0f0f0 25%, #f7f7f7 50%, #f0f0f0 75%);
+      background-size: 200% 100%;
+      animation: shimmer-animation 1.5s infinite linear;
+    }
+
+    @keyframes shimmer-animation {
+      from { background-position: 200% 0; }
+      to { background-position: -200% 0; }
+    }
+
+    .skeleton-box {
+      position: relative;
+      overflow: hidden;
+      background: #f3f4f6;
+    }
+    .skeleton-box::after {
+      content: "";
+      position: absolute;
+      top: 0; right: 0; bottom: 0; left: 0;
+      transform: translateX(-100%);
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
+      animation: slide-shimmer 1.8s infinite;
+    }
+    @keyframes slide-shimmer {
+      100% { transform: translateX(100%); }
+    }
+  </style>
+</head>
+<body>
+  <div class="min-h-screen bg-[#F8F8F8] flex flex-col items-center">
+    <!-- Header (Persistent) -->
+    <header class="w-full max-w-[375px] h-[64px] px-6 flex items-center justify-between bg-white border-b border-gray-100 sticky top-0 z-50" style="view-transition-name: main-nav">
+      <div class="w-8"></div>
+      <h1 class="text-[18px] font-bold tracking-tight text-gray-900">FlowSplit</h1>
+      <button id="nav-menu-btn" class="w-8 h-8 flex items-center justify-end text-gray-600">
+        <iconify-icon icon="lucide:menu" class="text-2xl"></iconify-icon>
+      </button>
+    </header>
+
+    <!-- Dynamic Content Area -->
+    <main class="w-full max-w-[375px] flex-1 flex flex-col p-6 space-y-8" style="view-transition-name: main-content">
+      
+      <!-- Back navigation if needed -->
+      <div class="flex items-center gap-2 text-gray-400 opacity-50">
+        <iconify-icon icon="lucide:arrow-left" class="text-lg"></iconify-icon>
+        <span class="text-xs font-bold uppercase tracking-wider">New Split</span>
+      </div>
+
+      <!-- Amount Entry Section (Loading State) -->
+      <section class="text-center space-y-4 pt-4">
+        <label class="text-sm font-bold text-gray-400 uppercase tracking-widest">Deposit Amount</label>
+        <div class="flex items-center justify-center gap-3">
+          <div class="h-10 w-6 bg-gray-200 rounded animate-pulse"></div>
+          <div class="h-16 w-48 bg-gray-200 rounded-2xl animate-pulse skeleton-box"></div>
+        </div>
+        <p class="text-xs text-teal-600 font-bold animate-pulse flex items-center justify-center gap-2">
+          <iconify-icon icon="lucide:loader-2" class="animate-spin"></iconify-icon>
+          Fetching your accounts...
+        </p>
+      </section>
+
+      <!-- Account Selection Section (Loading Skeletons) -->
+      <section class="space-y-4">
+        <h3 class="text-[11px] font-black text-gray-400 uppercase tracking-[0.15em]">Source Account</h3>
+        
+        <div class="space-y-3">
+          <!-- Skeleton Card 1 -->
+          <div class="w-full bg-white p-5 rounded-[24px] border border-gray-100 flex items-center justify-between skeleton-box">
+            <div class="flex items-center gap-4">
+              <div class="w-10 h-10 bg-gray-100 rounded-xl"></div>
+              <div class="space-y-2">
+                <div class="h-4 w-32 bg-gray-100 rounded"></div>
+                <div class="h-2 w-20 bg-gray-50 rounded"></div>
+              </div>
+            </div>
+            <div class="w-6 h-6 bg-gray-50 rounded-full"></div>
+          </div>
+
+          <!-- Skeleton Card 2 -->
+          <div class="w-full bg-white p-5 rounded-[24px] border border-gray-100 flex items-center justify-between skeleton-box">
+            <div class="flex items-center gap-4">
+              <div class="w-10 h-10 bg-gray-100 rounded-xl"></div>
+              <div class="space-y-2">
+                <div class="h-4 w-28 bg-gray-100 rounded"></div>
+                <div class="h-2 w-16 bg-gray-50 rounded"></div>
+              </div>
+            </div>
+            <div class="w-6 h-6 bg-gray-50 rounded-full"></div>
+          </div>
+
+          <!-- Add New Account Skeleton -->
+          <div class="w-full h-[84px] border-2 border-dashed border-gray-100 rounded-[24px] animate-pulse"></div>
+        </div>
+      </section>
+
+      <!-- Spacer to push button down -->
+      <div class="flex-1"></div>
+
+      <!-- Fixed Bottom Actions (Disabled State) -->
+      <div class="w-full space-y-4">
+        <button id="next-allocation-btn-loading" class="w-full bg-teal-accent opacity-50 cursor-not-allowed text-white font-bold py-5 rounded-[24px] flex items-center justify-center gap-2 pointer-events-none">
+          Continue to Split
+          <iconify-icon icon="lucide:arrow-right" class="text-lg"></iconify-icon>
+        </button>
+        <p class="text-center text-[10px] text-gray-400 font-medium px-8">
+          FlowSplit will analyze your rules and propose an allocation strategy based on this amount.
+        </p>
+      </div>
+
+    </main>
+  </div>
+</body>
+</html>

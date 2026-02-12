@@ -4,7 +4,11 @@
       "mcp__supabase__create_project",
       "mcp__supabase__get_project",
       "mcp__supabase__list_tables",
-      "mcp__supabase__apply_migration"
+      "mcp__supabase__apply_migration",
+      "Bash(npx tsc:*)",
+      "Bash(pkill:*)",
+      "Bash(lsof:*)",
+      "Bash(xargs kill:*)"
     ]
   },
   "enabledMcpjsonServers": [

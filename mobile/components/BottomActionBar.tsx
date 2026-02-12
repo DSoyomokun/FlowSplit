@@ -4,7 +4,7 @@
  */
 
 import React from 'react';
-import { View, StyleSheet, ViewStyle } from 'react-native';
+import { View, Text, StyleSheet, ViewStyle, TextStyle } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { BlurView } from 'expo-blur';
 
@@ -95,7 +95,7 @@ export function BottomSecondaryLink({ children, onPress }: SecondaryLinkProps) {
       {React.isValidElement(children) ? (
         children
       ) : (
-        <View style={linkStyles.text}>{children}</View>
+        <Text style={linkStyles.text}>{children}</Text>
       )}
     </View>
   );

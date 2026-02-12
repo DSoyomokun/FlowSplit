@@ -1,13 +1,37 @@
+/**
+ * Dashboard Screen
+ * Main home screen with balance overview, pending splits, and bucket summary
+ */
+
+import { useState } from 'react';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
-import { Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Dimensions, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+
 import { useAuth } from '@/contexts/AuthContext';
-import { useBuckets, useDeposits } from '@/hooks';
+import { useBuckets, useDeposits, useDepositMutations } from '@/hooks';
+import {
+  Header,
+  Card,
+  SectionLabel,
+  AmountDisplay,
+  EmptyBuckets,
+  FloatingActionButton,
+  AddDepositModal,
+  StatusDot,
+} from '@/components';
+import { Colors, BucketColors } from '@/constants/colors';
+import { FontFamily, FontSize } from '@/constants/typography';
+import { Spacing, BorderRadius, Size } from '@/constants/spacing';
 
 export default function DashboardScreen() {
   const { user } = useAuth();
+  const insets = useSafeAreaInsets();
   const { buckets, isLoading: bucketsLoading, refetch: refetchBuckets } = useBuckets();
   const { pendingDeposits, isLoading: depositsLoading, refetch: refetchDeposits } = useDeposits();
+  const { createDeposit, isCreating } = useDepositMutations();
+  const [showAddDeposit, setShowAddDeposit] = useState(false);
 
   const isLoading = bucketsLoading || depositsLoading;
 
@@ -17,208 +41,301 @@ export default function DashboardScreen() {
     await Promise.all([refetchBuckets(), refetchDeposits()]);
   }
 
+  async function handleAddDeposit(amount: number, description?: string) {
+    const deposit = await createDeposit({ amount, description });
+    if (deposit) {
+      setShowAddDeposit(false);
+      router.push(`/deposit/${deposit.id}/allocate`);
+      refetchDeposits();
+    }
+  }
+
+  const formatCurrency = (amount: number) => {
+    return `$${amount.toLocaleString('en-US', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    })}`;
+  };
+
   return (
-    <ScrollView
-      style={styles.container}
-      contentContainerStyle={styles.content}
-      refreshControl={
-        <RefreshControl refreshing={isLoading} onRefresh={onRefresh} />
-      }
-    >
-      <View style={styles.header}>
-        <Text style={styles.greeting}>
-          Hello, {user?.full_name?.split(' ')[0] || 'there'}
-        </Text>
-        <Text style={styles.totalLabel}>Total Balance</Text>
-        <Text style={styles.totalAmount}>${totalBalance.toFixed(2)}</Text>
-      </View>
+    <View style={styles.container}>
+      <Header rightAction="settings" onRightAction={() => router.push('/settings')} />
 
-      {pendingDeposits.length > 0 && (
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Pending Splits</Text>
-          {pendingDeposits.map((deposit) => (
-            <Pressable
-              key={deposit.id}
-              style={styles.pendingCard}
-              onPress={() => router.push(`/split-plan/${deposit.id}`)}
-            >
-              <View style={styles.pendingInfo}>
-                <Ionicons name="cash" size={24} color="#F59E0B" />
-                <View style={styles.pendingText}>
-                  <Text style={styles.pendingAmount}>${deposit.amount.toFixed(2)}</Text>
-                  <Text style={styles.pendingSource}>
-                    {deposit.source || 'Deposit detected'}
-                  </Text>
-                </View>
-              </View>
-              <Ionicons name="chevron-forward" size={20} color="#666" />
-            </Pressable>
-          ))}
-        </View>
-      )}
+      <ScrollView
+        style={styles.scrollView}
+        contentContainerStyle={[
+          styles.scrollContent,
+          { paddingBottom: Size.tabBarHeight + insets.bottom + Spacing[4] },
+        ]}
+        refreshControl={
+          <RefreshControl
+            refreshing={isLoading}
+            onRefresh={onRefresh}
+            tintColor={Colors.primary}
+          />
+        }
+        showsVerticalScrollIndicator={false}
+      >
+        {/* Balance Card */}
+        <Card variant="large" style={styles.balanceCard}>
+          <Text style={styles.greeting}>
+            Hello, {user?.full_name?.split(' ')[0] || 'there'}
+          </Text>
+          <Text style={styles.balanceLabel}>Total Balance</Text>
+          <AmountDisplay
+            amount={totalBalance}
+            size="lg"
+            color="#FFFFFF"
+            currencyStyle={{ color: 'rgba(255,255,255,0.7)' }}
+          />
+        </Card>
 
-      <View style={styles.section}>
-        <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>Your Buckets</Text>
-          <Pressable onPress={() => router.push('/(tabs)/buckets')}>
-            <Text style={styles.seeAll}>See all</Text>
-          </Pressable>
-        </View>
-        {buckets.length === 0 ? (
-          <View style={styles.emptyState}>
-            <Text style={styles.emptyText}>No buckets yet</Text>
-            <Pressable
-              style={styles.addButton}
-              onPress={() => router.push('/(tabs)/buckets')}
-            >
-              <Text style={styles.addButtonText}>Add your first bucket</Text>
-            </Pressable>
-          </View>
-        ) : (
-          <View style={styles.bucketsGrid}>
-            {buckets.slice(0, 4).map((bucket) => (
-              <View key={bucket.id} style={styles.bucketCard}>
-                <Text style={styles.bucketEmoji}>{bucket.emoji || '💰'}</Text>
-                <Text style={styles.bucketName} numberOfLines={1}>
-                  {bucket.name}
-                </Text>
-                <Text style={styles.bucketBalance}>
-                  ${bucket.current_balance.toFixed(2)}
-                </Text>
-                <Text style={styles.bucketAllocation}>
-                  {bucket.bucket_type === 'percentage'
-                    ? `${bucket.allocation_value}%`
-                    : `$${bucket.allocation_value}`}
-                </Text>
-              </View>
-            ))}
+        {/* Pending Splits Section */}
+        {pendingDeposits.length > 0 && (
+          <View style={styles.section}>
+            <SectionLabel>Pending Splits</SectionLabel>
+            <View style={styles.sectionContent}>
+              {pendingDeposits.map((deposit) => (
+                <Card
+                  key={deposit.id}
+                  onPress={() => router.push(`/split-plan/${deposit.id}`)}
+                  animated
+                  style={styles.pendingCard}
+                >
+                  <View style={styles.pendingContent}>
+                    <View style={styles.pendingLeft}>
+                      <View style={styles.pendingIconContainer}>
+                        <Ionicons name="cash" size={24} color={Colors.warning.bgSolid} />
+                      </View>
+                      <View style={styles.pendingInfo}>
+                        <Text style={styles.pendingAmount}>{formatCurrency(deposit.amount)}</Text>
+                        <Text style={styles.pendingSource}>
+                          {deposit.source || 'Deposit detected'}
+                        </Text>
+                      </View>
+                    </View>
+                    <View style={styles.pendingRight}>
+                      <View style={styles.pendingBadge}>
+                        <Text style={styles.pendingBadgeText}>Split</Text>
+                      </View>
+                      <Ionicons name="chevron-forward" size={20} color={Colors.text.muted} />
+                    </View>
+                  </View>
+                </Card>
+              ))}
+            </View>
           </View>
         )}
-      </View>
-    </ScrollView>
+
+        {/* Buckets Section */}
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <SectionLabel>Your Buckets</SectionLabel>
+            <Pressable onPress={() => router.push('/(tabs)/buckets')}>
+              <Text style={styles.seeAll}>See all</Text>
+            </Pressable>
+          </View>
+
+          {buckets.length === 0 ? (
+            <EmptyBuckets
+              onCreateBucket={() => router.push('/(tabs)/buckets')}
+            />
+          ) : (
+            <View style={styles.bucketsGrid}>
+              {buckets.slice(0, 4).map((bucket, index) => (
+                <Card
+                  key={bucket.id}
+                  onPress={() => router.push(`/buckets/${bucket.id}` as any)}
+                  animated
+                  style={styles.bucketCard}
+                >
+                  <View style={styles.bucketContent}>
+                    <Text style={styles.bucketEmoji}>{bucket.emoji || '💰'}</Text>
+                    <Text style={styles.bucketName} numberOfLines={1}>
+                      {bucket.name}
+                    </Text>
+                    <Text style={styles.bucketBalance}>
+                      {formatCurrency(bucket.current_balance)}
+                    </Text>
+                    <View style={styles.bucketAllocationRow}>
+                      <StatusDot
+                        color={bucket.color || BucketColors[index % BucketColors.length]}
+                        size={8}
+                      />
+                      <Text style={styles.bucketAllocation}>
+                        {bucket.bucket_type === 'percentage'
+                          ? `${bucket.allocation_value}%`
+                          : formatCurrency(bucket.allocation_value)}
+                      </Text>
+                    </View>
+                  </View>
+                </Card>
+              ))}
+            </View>
+          )}
+        </View>
+      </ScrollView>
+
+      <FloatingActionButton
+        onPress={() => setShowAddDeposit(true)}
+        icon="add"
+      />
+
+      <AddDepositModal
+        visible={showAddDeposit}
+        onClose={() => setShowAddDeposit(false)}
+        onSubmit={handleAddDeposit}
+        isSubmitting={isCreating}
+      />
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: Colors.background,
   },
-  content: {
-    padding: 16,
+  scrollView: {
+    flex: 1,
   },
-  header: {
-    backgroundColor: '#0a7ea4',
-    borderRadius: 16,
-    padding: 24,
-    marginBottom: 24,
+  scrollContent: {
+    paddingHorizontal: Spacing.page, // 24px
+    paddingTop: Spacing[6],
+    gap: Spacing.section, // 24px
+  },
+
+  // Balance Card
+  balanceCard: {
+    backgroundColor: Colors.primary,
+    alignItems: 'center',
+    paddingVertical: Spacing[8],
   },
   greeting: {
-    fontSize: 16,
+    fontFamily: FontFamily.medium,
+    fontSize: FontSize.md,
     color: 'rgba(255,255,255,0.8)',
-    marginBottom: 8,
+    marginBottom: Spacing[2],
   },
-  totalLabel: {
-    fontSize: 14,
+  balanceLabel: {
+    fontFamily: FontFamily.bold,
+    fontSize: FontSize.xs,
     color: 'rgba(255,255,255,0.6)',
+    textTransform: 'uppercase',
+    letterSpacing: 2,
+    marginBottom: Spacing[1],
   },
-  totalAmount: {
-    fontSize: 36,
-    fontWeight: 'bold',
-    color: '#fff',
-  },
+
+  // Section
   section: {
-    marginBottom: 24,
+    gap: Spacing[3],
   },
   sectionHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 12,
   },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    marginBottom: 12,
+  sectionContent: {
+    gap: Spacing[3],
   },
   seeAll: {
-    color: '#0a7ea4',
-    fontWeight: '500',
+    fontFamily: FontFamily.bold,
+    fontSize: FontSize.base,
+    color: Colors.primary,
   },
+
+  // Pending Card
   pendingCard: {
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    padding: 16,
+    borderLeftWidth: 4,
+    borderLeftColor: Colors.warning.bgSolid,
+  },
+  pendingContent: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: 8,
-    borderLeftWidth: 4,
-    borderLeftColor: '#F59E0B',
   },
-  pendingInfo: {
+  pendingLeft: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
+    gap: Spacing[3],
   },
-  pendingText: {
-    gap: 2,
+  pendingIconContainer: {
+    width: 40,
+    height: 40,
+    borderRadius: BorderRadius.lg,
+    backgroundColor: Colors.warning.bg,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  pendingInfo: {
+    gap: Spacing[0.5],
   },
   pendingAmount: {
-    fontSize: 18,
-    fontWeight: '600',
+    fontFamily: FontFamily.black,
+    fontSize: FontSize.lg,
+    color: Colors.text.primary,
   },
   pendingSource: {
-    fontSize: 14,
-    color: '#666',
+    fontFamily: FontFamily.medium,
+    fontSize: FontSize.base,
+    color: Colors.text.muted,
   },
-  emptyState: {
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    padding: 24,
+  pendingRight: {
+    flexDirection: 'row',
     alignItems: 'center',
+    gap: Spacing[2],
   },
-  emptyText: {
-    color: '#666',
-    marginBottom: 12,
+  pendingBadge: {
+    backgroundColor: Colors.warning.bg,
+    paddingHorizontal: Spacing[2],
+    paddingVertical: Spacing[1],
+    borderRadius: BorderRadius.badge,
   },
-  addButton: {
-    backgroundColor: '#0a7ea4',
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderRadius: 8,
+  pendingBadgeText: {
+    fontFamily: FontFamily.bold,
+    fontSize: FontSize.xs,
+    color: Colors.warning.text,
+    textTransform: 'uppercase',
+    letterSpacing: 1,
   },
-  addButtonText: {
-    color: '#fff',
-    fontWeight: '500',
-  },
+
+  // Buckets Grid
   bucketsGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 12,
+    justifyContent: 'space-between',
+    rowGap: Spacing[3],
   },
   bucketCard: {
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    padding: 16,
-    width: '48%',
+    width: (Dimensions.get('window').width - Spacing.page * 2 - Spacing[3]) / 2,
+  },
+  bucketContent: {
     alignItems: 'center',
+    gap: Spacing[1],
   },
   bucketEmoji: {
     fontSize: 32,
-    marginBottom: 8,
+    marginBottom: Spacing[1],
   },
   bucketName: {
-    fontSize: 14,
-    fontWeight: '500',
-    marginBottom: 4,
+    fontFamily: FontFamily.bold,
+    fontSize: FontSize.md,
+    color: Colors.text.secondary,
+    textAlign: 'center',
   },
   bucketBalance: {
-    fontSize: 18,
-    fontWeight: '600',
+    fontFamily: FontFamily.black,
+    fontSize: FontSize.lg,
+    color: Colors.text.primary,
+  },
+  bucketAllocationRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing[1],
   },
   bucketAllocation: {
-    fontSize: 12,
-    color: '#666',
+    fontFamily: FontFamily.medium,
+    fontSize: FontSize.base,
+    color: Colors.text.muted,
   },
 });

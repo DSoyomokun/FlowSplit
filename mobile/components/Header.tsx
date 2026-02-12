@@ -96,14 +96,14 @@ export function Header({
 
 const styles = StyleSheet.create({
   container: {
-    height: Size.headerHeight,
+    height: Size.headerHeight, // 64px
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: Spacing.page,
+    paddingHorizontal: Spacing.page, // 24px
     backgroundColor: Colors.card,
     borderBottomWidth: 1,
-    borderBottomColor: Colors.border.light,
+    borderBottomColor: Colors.gray[100],
   },
   transparent: {
     backgroundColor: 'transparent',
@@ -128,7 +128,7 @@ const styles = StyleSheet.create({
   },
   title: {
     fontFamily: FontFamily.bold,
-    fontSize: FontSize.xl,
+    fontSize: 18, // From design spec
     color: Colors.text.primary,
     letterSpacing: -0.25,
   },

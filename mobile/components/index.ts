@@ -21,6 +21,8 @@ export { ErrorBanner } from './ErrorBanner';
 export { StatusBadge, StatusDot } from './StatusBadge';
 export type { StatusType } from './StatusBadge';
 export { ErrorModal } from './ErrorModal';
+export { AddDepositModal } from './AddDepositModal';
+export { FloatingActionButton } from './FloatingActionButton';
 export { EmptyState, EmptyBuckets, EmptyHistory, EmptySearch } from './EmptyState';
 export { ActionCard } from './ActionCard';
 

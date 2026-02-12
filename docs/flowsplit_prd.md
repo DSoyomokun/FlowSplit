@@ -195,32 +195,154 @@ Buckets specify a delivery method:
 
 ## 12) MVP Screens / UX
 
-### A) Bucket Builder
-- Create/edit bucket:
-  - name
-  - allocation type (percentage / fixed)
-  - allocation value
-  - delivery method (internal transfer / external link / manual)
-  - destination (if internal transfer)
-  - external link template (if external link)
-  - priority/order
+### Screen Inventory
 
-### B) Deposit Feed
-- Shows each deposit
-- Split plan preview
-- “Confirm” button
-- “Edit amounts” option (per deposit)
+| Screen | Mobile Path | Mockup Reference |
+|--------|-------------|------------------|
+| Dashboard | `app/(tabs)/index.tsx` | 01-direct-interaction-donut-splitter.html |
+| Deposit Setup | `app/deposit/setup.tsx` | 02-deposit-setup.html |
+| Split Allocation | `app/deposit/[id]/allocate.tsx` | 03-split-allocation.html |
+| Bucket Configuration | `app/buckets/configure.tsx` | 04-bucket-configuration.html |
+| Split Confirmation | `app/deposit/[id]/confirm.tsx` | 05-confirmation.html |
+| Split Complete | `app/deposit/[id]/complete.tsx` | 06-split-complete.html |
+| Split Partial Success | `app/deposit/[id]/complete.tsx` | 07-split-complete-partial.html |
+| Processing/Retry | `app/deposit/[id]/processing.tsx` | 08-split-processing-retry.html |
+| Manual Action Required | — | 09-split-complete-manual-action.html |
+| Split History | `app/(tabs)/history.tsx` | 12-split-history-ledger.html |
 
-### C) Confirmation
-- Show computed amounts per bucket
-- Allow override for this deposit (optional)
-- Confirm execution
+### A) Dashboard
+- **Path:** `app/(tabs)/index.tsx`
+- Greeting with user name
+- Total balance card (teal background)
+- Pending splits section (deposits awaiting allocation)
+- Buckets grid (top 4 buckets with balances)
+- Floating Action Button (FAB) for manual deposit entry
+- Pull-to-refresh
 
-### D) History / Ledger
-- Deposits
-- Split plans
-- Actions per bucket
-- Failures and retry attempts
+### B) Deposit Setup
+- **Path:** `app/deposit/setup.tsx`
+- **Mockup:** 02-deposit-setup.html
+- Large amount input with currency formatting
+- Source account selector (connected bank accounts)
+- "Connect new source" option
+- "Continue to Split" primary action
+- **States:** Loading (26), Validation Error (27), Error (23)
+
+### C) Split Allocation
+- **Path:** `app/deposit/[id]/allocate.tsx`
+- **Mockup:** 03-split-allocation.html
+- Interactive donut chart showing allocation breakdown
+- Center display: total amount + "Drag to adjust" hint
+- Allocation list with color dots, percentages, amounts
+- Remainder card showing unallocated funds
+- "Confirm Split" primary action
+- "Keep Everything in Checking" secondary action
+- Settings gear to configure buckets
+- **States:** Loading (24), Error (21)
+
+### D) Bucket Configuration
+- **Path:** `app/buckets/configure.tsx`
+- **Mockup:** 04-bucket-configuration.html
+- List of existing buckets with:
+  - Color indicator
+  - Name and emoji
+  - Allocation (percentage or fixed amount)
+  - Delivery method indicator
+- Drag to reorder priority
+- Add new bucket button
+- Edit/delete bucket actions
+- **States:** Loading (22), Empty (20), Error (19)
+
+### E) Split Confirmation
+- **Path:** `app/deposit/[id]/confirm.tsx`
+- **Mockup:** 05-confirmation.html
+- "Review Split" title
+- Deposit card with:
+  - Incoming amount
+  - Source account
+  - Date
+- Distribution breakdown:
+  - Each bucket with color dot, name, destination, amount, percentage
+  - Remainder card (dashed border)
+- Details section:
+  - Execution timing
+  - Service fees ($0.00)
+  - Total allocated
+- "Confirm & Distribute" primary action
+- "Back to adjustments" secondary action
+- **States:** Loading (15, 25), Error (16), Network Error (17)
+
+### F) Processing Screen
+- **Path:** `app/deposit/[id]/processing.tsx`
+- **Mockup:** 08-split-processing-retry.html
+- Animated spinner icon
+- "Distributing Funds" title
+- Per-allocation status indicators:
+  - Pending (gray dot)
+  - Processing (spinning icon)
+  - Complete (green checkmark)
+  - Error (red alert)
+- Retry banner for failed transfers
+- Disabled "Return to Dashboard" during processing
+- **States:** Processing, Retrying, Partial Success, Complete
+
+### G) Split Complete
+- **Path:** `app/deposit/[id]/complete.tsx`
+- **Mockup:** 06-split-complete.html
+- Success icon (teal circle with checkmark)
+- "Split Complete" title
+- Confirmation message with deposit amount
+- Allocation summary card:
+  - Each bucket with amount
+  - Remainder in checking
+- "Manage Buckets" link
+- "Return to Dashboard" primary action
+- **Variants:**
+  - Partial Success (07): Shows failed items with retry option
+  - Manual Action Required (09): External link buckets need user completion
+
+### H) Split History / Ledger
+- **Path:** `app/(tabs)/history.tsx`
+- **Mockup:** 12-split-history-ledger.html
+- Timeline of past splits
+- Filter by date range, status, bucket
+- Each entry shows:
+  - Deposit amount and date
+  - Split status (complete/partial/failed)
+  - Bucket breakdown
+- Tap to view details
+- Retry failed actions
+- **States:** Loading (13), Filter Loading (28), Retry Animation (14)
+
+### State Variants (Mockups 15-28)
+
+| State | Mockup | Description |
+|-------|--------|-------------|
+| Confirmation Loading | 15 | Skeleton cards while fetching split preview |
+| Confirmation Error | 16 | Error banner with retry option |
+| Confirmation Network Error | 17 | Offline state with cached data option |
+| Bucket Config Error | 19 | Failed to load buckets |
+| Bucket Config Empty | 20 | No buckets created yet, onboarding prompt |
+| Split Allocation Error | 21 | Failed to compute allocation |
+| Bucket Config Loading | 22 | Skeleton bucket cards |
+| Deposit Setup Error | 23 | Account connection failed |
+| Split Allocation Loading | 24 | Loading allocation preview |
+| Confirmation Loading | 25 | Alternative confirmation loading state |
+| Deposit Setup Loading | 26 | Loading connected accounts |
+| Deposit Validation Error | 27 | Invalid amount entered |
+| History Filter Loading | 28 | Loading filtered results |
+
+### Design System
+
+| Token | Value |
+|-------|-------|
+| Primary Color | `#0EA5A5` (Teal) |
+| Background | `#F8F8F8` |
+| Card Background | `#FFFFFF` |
+| Font Family | Satoshi (Black, Bold, Medium, Regular) |
+| Card Border Radius | 32px (large), 24px (medium), 16px (small) |
+| Page Padding | 24px |
+| Section Gap | 24px |
 
 ---
 

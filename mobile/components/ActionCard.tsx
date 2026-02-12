@@ -11,6 +11,7 @@ import {
   Pressable,
   TextInput,
   Linking,
+  Platform,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as Clipboard from 'expo-clipboard';
@@ -43,7 +44,9 @@ export function ActionCard({
 
   const handleOpenLink = async () => {
     if (linkUrl) {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+      if (Platform.OS !== 'web') {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+      }
       try {
         await Linking.openURL(linkUrl);
         onComplete?.();
@@ -56,7 +59,9 @@ export function ActionCard({
   const handleCopyLink = async () => {
     if (linkUrl) {
       await Clipboard.setStringAsync(linkUrl);
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      if (Platform.OS !== 'web') {
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      }
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     }

@@ -11,6 +11,7 @@ import {
   StyleSheet,
   Pressable,
   ViewStyle,
+  Platform,
 } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { Ionicons } from '@expo/vector-icons';
@@ -47,7 +48,7 @@ export function AmountInput({
   const [isFocused, setIsFocused] = useState(autoFocus);
   const inputRef = React.useRef<TextInput>(null);
 
-  const formatForInput = useCallback((num: number): string => {
+  const formatValueForDisplay = useCallback((num: number): string => {
     if (num === 0) return '';
     return num.toLocaleString('en-US', {
       minimumFractionDigits: 0,
@@ -90,7 +91,9 @@ export function AmountInput({
 
   const handleFocus = () => {
     setIsFocused(true);
-    Haptics.selectionAsync();
+    if (Platform.OS !== 'web') {
+      Haptics.selectionAsync();
+    }
   };
 
   const handleBlur = () => {

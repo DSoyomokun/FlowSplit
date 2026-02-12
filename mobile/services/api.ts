@@ -14,9 +14,9 @@ async function request<T>(
 ): Promise<T> {
   const token = await getAccessToken();
 
-  const headers: HeadersInit = {
+  const headers: Record<string, string> = {
     'Content-Type': 'application/json',
-    ...options.headers,
+    ...(options.headers as Record<string, string>),
   };
 
   if (token) {
@@ -102,6 +102,17 @@ export async function getPendingDeposits(): Promise<Deposit[]> {
 
 export async function getDeposit(id: string): Promise<Deposit> {
   return request<Deposit>(`/deposits/${id}`);
+}
+
+export async function createDeposit(data: {
+  amount: number;
+  source?: string;
+  description?: string;
+}): Promise<Deposit> {
+  return request<Deposit>('/deposits', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  });
 }
 
 // Split Plans

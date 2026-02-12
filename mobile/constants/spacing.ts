@@ -1,6 +1,6 @@
 /**
  * FlowSplit Spacing System
- * Consistent spacing values from design
+ * Based on design spec from SuperDesign
  */
 
 // Base spacing unit (4px)
@@ -30,9 +30,9 @@ export const Spacing = {
   20: BASE * 20,      // 80
   24: BASE * 24,      // 96
 
-  // Semantic spacing
-  page: 20,           // Main page padding (p-5)
-  section: 24,        // Space between sections (space-y-6)
+  // Semantic spacing (from design spec)
+  page: 24,           // Main page padding (p-6 = 1.5rem = 24px)
+  section: 24,        // Space between sections
   card: 24,           // Card internal padding (p-6)
   cardSmall: 16,      // Small card padding (p-4)
   cardLarge: 32,      // Large card padding (p-8)
@@ -46,18 +46,19 @@ export const BorderRadius = {
   none: 0,
   sm: 4,
   md: 8,
-  lg: 12,
-  xl: 16,             // rounded-2xl - buttons, items
-  '2xl': 24,          // rounded-[24px] - medium cards
-  '3xl': 32,          // rounded-[32px] - large cards
-  full: 9999,         // rounded-full - circles
+  lg: 12,             // For icons, small elements
+  xl: 16,             // For cards, buttons (rounded-2xl)
+  '2xl': 24,          // For medium cards (rounded-[24px])
+  '3xl': 32,          // For large cards (rounded-[32px])
+  full: 9999,
 
-  // Semantic
-  button: 16,
-  card: 32,
-  cardMedium: 24,
+  // Semantic (from design spec)
+  button: 16,         // Buttons use xl (16px)
+  card: 32,           // Large cards use 32px
+  cardMedium: 24,     // Medium cards use 24px
+  cardSmall: 16,      // Small cards/items use 16px
   input: 16,
-  icon: 16,
+  icon: 12,           // Icon containers
   badge: 12,
   indicator: 9999,
 } as const;
@@ -79,27 +80,31 @@ export const Size = {
   // Component sizes
   headerHeight: 64,
   tabBarHeight: 80,
-  bottomBarHeight: 140,    // With safe area
+  bottomBarHeight: 140,
   buttonHeight: 56,        // py-4 equivalent
   inputHeight: 56,
   cardIcon: 48,            // w-12 h-12
+  bucketIcon: 40,          // w-10 h-10
 
   // Donut chart
-  donutSize: 280,
-  donutRadius: 40,         // In viewBox units (100x100)
+  donutSize: 260,
+  donutRadius: 40,
   donutStrokeWidth: 12,
   donutStrokeWidthHover: 14,
   donutHandleRadius: 4.5,
 
   // Safe area (iOS bottom)
   safeAreaBottom: 34,
+
+  // Max width (mobile container)
+  maxWidth: 375,
 } as const;
 
 // Layout helpers
 export const Layout = {
   // Max widths
-  maxWidth: 375,           // iPhone design width
-  contentMaxWidth: 335,    // With page padding
+  maxWidth: 375,
+  contentMaxWidth: 327,    // 375 - (24 * 2) page padding
 
   // Z-index scale
   zIndex: {
@@ -111,5 +116,7 @@ export const Layout = {
     modal: 50,
     popover: 60,
     toast: 70,
+    header: 50,
+    bottomBar: 100,
   },
 } as const;

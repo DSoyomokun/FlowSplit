@@ -4,12 +4,11 @@
  */
 
 import React, { useRef, useCallback } from 'react';
-import { View, StyleSheet, LayoutChangeEvent } from 'react-native';
+import { View, StyleSheet, LayoutChangeEvent, Platform } from 'react-native';
 import { Svg, G } from 'react-native-svg';
 import {
   Gesture,
   GestureDetector,
-  GestureHandlerRootView,
 } from 'react-native-gesture-handler';
 import * as Haptics from 'expo-haptics';
 
@@ -27,7 +26,6 @@ import {
   angleToPercentage,
 } from './useDonutChart';
 import { Colors } from '@/constants/colors';
-import { Shadows } from '@/constants/shadows';
 
 export function DonutChart({
   segments: initialSegments,
@@ -121,7 +119,9 @@ export function DonutChart({
       const handleIndex = findClosestHandle(event.x, event.y);
       if (handleIndex !== null) {
         setActiveHandle(handleIndex);
-        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+        if (Platform.OS !== 'web') {
+          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+        }
       }
     })
     .onUpdate((event) => {
@@ -132,7 +132,9 @@ export function DonutChart({
     })
     .onEnd(() => {
       if (activeHandle !== null) {
-        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        if (Platform.OS !== 'web') {
+          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        }
       }
       setActiveHandle(null);
     })
@@ -160,69 +162,64 @@ export function DonutChart({
   }, [segments, splitPoints, remainder]);
 
   return (
-    <GestureHandlerRootView style={styles.gestureRoot}>
-      <GestureDetector gesture={panGesture}>
-        <View
-          ref={containerRef}
-          style={[styles.container, { width: size, height: size }]}
-          onLayout={handleLayout}
+    <GestureDetector gesture={panGesture}>
+      <View
+        ref={containerRef}
+        style={[styles.container, { width: size, height: size }]}
+        onLayout={handleLayout}
+      >
+        <Svg
+          width="100%"
+          height="100%"
+          viewBox={`0 0 ${config.viewBox} ${config.viewBox}`}
         >
-          <Svg
-            width="100%"
-            height="100%"
-            viewBox={`0 0 ${config.viewBox} ${config.viewBox}`}
-          >
-            {/* Segments */}
+          {/* Segments */}
+          <G>
+            {segmentBoundaries.map((boundary, index) => {
+              const isRemainder = index >= segments.length;
+              const segment = isRemainder ? null : segments[index];
+
+              return (
+                <DonutSegment
+                  key={isRemainder ? 'remainder' : segment!.id}
+                  startPercentage={boundary.start}
+                  endPercentage={boundary.end}
+                  color={isRemainder ? REMAINDER_COLOR : segment!.color}
+                  config={config}
+                  showLabel={showLabels}
+                  isRemainder={isRemainder}
+                />
+              );
+            })}
+          </G>
+
+          {/* Handles */}
+          {editable && showHandles && (
             <G>
-              {segmentBoundaries.map((boundary, index) => {
-                const isRemainder = index >= segments.length;
-                const segment = isRemainder ? null : segments[index];
-
-                return (
-                  <DonutSegment
-                    key={isRemainder ? 'remainder' : segment!.id}
-                    startPercentage={boundary.start}
-                    endPercentage={boundary.end}
-                    color={isRemainder ? REMAINDER_COLOR : segment!.color}
-                    config={config}
-                    showLabel={showLabels}
-                    isRemainder={isRemainder}
-                  />
-                );
-              })}
+              {splitPoints.map((point, index) => (
+                <DonutHandle
+                  key={`handle-${index}`}
+                  percentage={point}
+                  config={config}
+                  isActive={activeHandle === index}
+                />
+              ))}
             </G>
-
-            {/* Handles */}
-            {editable && showHandles && (
-              <G>
-                {splitPoints.map((point, index) => (
-                  <DonutHandle
-                    key={`handle-${index}`}
-                    percentage={point}
-                    config={config}
-                    isActive={activeHandle === index}
-                  />
-                ))}
-              </G>
-            )}
-          </Svg>
-
-          {/* Center Content */}
-          {centerContent && (
-            <View style={styles.centerContent} pointerEvents="none">
-              {centerContent}
-            </View>
           )}
-        </View>
-      </GestureDetector>
-    </GestureHandlerRootView>
+        </Svg>
+
+        {/* Center Content */}
+        {centerContent && (
+          <View style={styles.centerContent} pointerEvents="none">
+            {centerContent}
+          </View>
+        )}
+      </View>
+    </GestureDetector>
   );
 }
 
 const styles = StyleSheet.create({
-  gestureRoot: {
-    flex: 0,
-  },
   container: {
     position: 'relative',
     alignItems: 'center',

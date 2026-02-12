@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Split History - FlowSplit</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://code.iconify.design/iconify-icon/1.0.7/iconify-icon.min.js"></script>
+    <meta name="view-transition" content="same-origin">
+    <style>
+        @import url('https://api.fontshare.com/v2/css?f[]=satoshi@900,700,500,400&display=swap');
+
+        :root {
+            --teal-accent: #0EA5A5;
+            --bg-offwhite: #F8F8F8;
+            --card-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.05);
+        }
+
+        body {
+            font-family: 'Satoshi', sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .custom-shadow {
+            box-shadow: var(--card-shadow);
+        }
+
+        /* View Transitions */
+        @view-transition {
+            navigation: auto;
+        }
+
+        ::view-transition-old(main-content) {
+            animation: 0.25s ease-out both fade-out;
+        }
+        ::view-transition-new(main-content) {
+            animation: 0.25s ease-in 0.1s both fade-in;
+        }
+
+        @keyframes fade-out {
+            from { opacity: 1; }
+            to { opacity: 0; }
+        }
+        @keyframes fade-in {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .status-badge-completed {
+            background-color: #ECFDF5;
+            color: #059669;
+        }
+        .status-badge-pending {
+            background-color: #FFFBEB;
+            color: #D97706;
+        }
+        .status-badge-failed {
+            background-color: #FEF2F2;
+            color: #DC2626;
+        }
+
+        .hide-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .hide-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="w-full h-screen bg-[#F8F8F8] flex flex-col overflow-hidden">
+        <!-- Header Section -->
+        <header class="shrink-0 pt-14 px-6 pb-4 bg-white border-b border-black/[0.04] z-10" style="view-transition-name: main-nav">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                    <a href="#" id="back-button" class="w-10 h-10 flex items-center justify-center rounded-full hover:bg-gray-50 transition-colors">
+                        <iconify-icon icon="lucide:chevron-left" class="text-2xl text-gray-800"></iconify-icon>
+                    </a>
+                    <h1 class="text-xl font-bold text-gray-900 tracking-tight">Split History</h1>
+                </div>
+                <button id="filter-btn" class="w-10 h-10 flex items-center justify-center rounded-full border border-black/[0.04] bg-white custom-shadow hover:scale-105 active:scale-95 transition-all">
+                    <iconify-icon icon="lucide:sliders-horizontal" class="text-lg text-gray-600"></iconify-icon>
+                </button>
+            </div>
+        </header>
+
+        <!-- Main Content Area -->
+        <main class="flex-1 overflow-y-auto hide-scrollbar px-6 py-6" style="view-transition-name: main-content">
+            <!-- Month Grouping -->
+            <div class="mb-8">
+                <h2 class="text-xs font-bold uppercase tracking-widest text-gray-400 mb-4">October 2023</h2>
+                
+                <!-- Card 1: Completed -->
+                <div class="bg-white rounded-[24px] p-5 custom-shadow mb-4 border border-black/[0.02] active:scale-[0.98] transition-transform cursor-pointer group">
+                    <div class="flex justify-between items-start mb-4">
+                        <div class="flex flex-col">
+                            <span class="text-sm text-gray-500 font-medium">Oct 24, 2023</span>
+                            <span class="text-2xl font-black text-gray-900">$1,200.00</span>
+                        </div>
+                        <div class="px-3 py-1.5 rounded-full text-[11px] font-bold status-badge-completed flex items-center gap-1.5 uppercase tracking-wide">
+                            <iconify-icon icon="lucide:check-circle-2" class="text-sm"></iconify-icon>
+                            Completed
+                        </div>
+                    </div>
+                    <div class="flex items-center justify-between border-t border-gray-50 pt-4">
+                        <span class="text-sm text-gray-600">Split into 3 buckets</span>
+                        <iconify-icon icon="lucide:chevron-right" class="text-gray-300 group-hover:text-gray-500 transition-colors"></iconify-icon>
+                    </div>
+                </div>
+
+                <!-- Card 2: Pending (Visualizing Expanded State) -->
+                <div class="bg-white rounded-[24px] p-5 custom-shadow mb-4 border border-[#0EA5A5]/20 ring-1 ring-[#0EA5A5]/10">
+                    <div class="flex justify-between items-start mb-4">
+                        <div class="flex flex-col">
+                            <span class="text-sm text-gray-500 font-medium">Oct 18, 2023</span>
+                            <span class="text-2xl font-black text-gray-900">$850.00</span>
+                        </div>
+                        <div class="px-3 py-1.5 rounded-full text-[11px] font-bold status-badge-pending flex items-center gap-1.5 uppercase tracking-wide">
+                            <iconify-icon icon="lucide:alert-circle" class="text-sm"></iconify-icon>
+                            Pending
+                        </div>
+                    </div>
+                    
+                    <!-- Expanded Details Area -->
+                    <div class="space-y-4 pt-4 border-t border-gray-50">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center gap-3">
+                                <div class="w-8 h-8 rounded-lg bg-emerald-50 flex items-center justify-center">
+                                    <iconify-icon icon="lucide:church" class="text-emerald-600"></iconify-icon>
+                                </div>
+                                <div>
+                                    <p class="text-sm font-bold text-gray-900">Tithe</p>
+                                    <p class="text-[11px] text-gray-500 uppercase">Wells Fargo • 4920</p>
+                                </div>
+                            </div>
+                            <div class="text-right">
+                                <p class="text-sm font-bold text-gray-900">$120.00</p>
+                                <p class="text-[10px] text-emerald-600 font-bold uppercase">Success</p>
+                            </div>
+                        </div>
+
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center gap-3">
+                                <div class="w-8 h-8 rounded-lg bg-amber-50 flex items-center justify-center">
+                                    <iconify-icon icon="lucide:piggy-bank" class="text-amber-600"></iconify-icon>
+                                </div>
+                                <div>
+                                    <p class="text-sm font-bold text-gray-900">Savings</p>
+                                    <p class="text-[11px] text-gray-500 uppercase">Marcus HYSA • 1102</p>
+                                </div>
+                            </div>
+                            <div class="text-right">
+                                <p class="text-sm font-bold text-gray-900">$500.00</p>
+                                <p class="text-[10px] text-amber-600 font-bold uppercase">In Progress</p>
+                            </div>
+                        </div>
+                        
+                        <button class="w-full py-3 bg-[#0EA5A5]/5 text-[#0EA5A5] rounded-xl text-sm font-bold mt-2 hover:bg-[#0EA5A5]/10 transition-colors active:scale-95">
+                            View Real-time Status
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Card 3: Failed -->
+                <div id="failed-split-card" class="bg-white rounded-[24px] p-5 custom-shadow mb-4 border border-black/[0.02] group transition-all duration-500">
+                    <div class="flex justify-between items-start mb-4">
+                        <div class="flex flex-col">
+                            <span class="text-sm text-gray-500 font-medium">Oct 05, 2023</span>
+                            <span class="text-2xl font-black text-gray-900">$2,100.00</span>
+                        </div>
+                        <div id="failed-status-badge" class="px-3 py-1.5 rounded-full text-[11px] font-bold status-badge-failed flex items-center gap-1.5 uppercase tracking-wide transition-all duration-300">
+                            <iconify-icon icon="lucide:x-circle" class="text-sm"></iconify-icon>
+                            Action Needed
+                        </div>
+                    </div>
+                    
+                    <!-- Original Footer (Status Summary) -->
+                    <div id="failed-card-footer" class="flex items-center justify-between border-t border-gray-50 pt-4 transition-all duration-300">
+                        <div class="flex items-center gap-2">
+                            <div class="flex -space-x-2">
+                                <div class="w-6 h-6 rounded-full border-2 border-white bg-gray-100 flex items-center justify-center text-[10px] font-bold">T</div>
+                                <div class="w-6 h-6 rounded-full border-2 border-white bg-gray-100 flex items-center justify-center text-[10px] font-bold">S</div>
+                                <div class="w-6 h-6 rounded-full border-2 border-white bg-gray-100 flex items-center justify-center text-[10px] font-bold text-rose-500">!</div>
+                            </div>
+                            <span class="text-xs text-rose-600 font-bold">1 transfer failed</span>
+                        </div>
+                        <button id="retry-action-btn" class="px-4 py-2 bg-rose-500 text-white text-xs font-bold rounded-lg hover:bg-rose-600 active:scale-95 transition-all shadow-sm shadow-rose-200">
+                            Retry Now
+                        </button>
+                    </div>
+
+                    <!-- Retrying State (Hidden) -->
+                    <div id="retrying-state" class="hidden border-t border-gray-50 pt-4 space-y-4">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center gap-3">
+                                <div class="w-9 h-9 rounded-xl bg-teal-50 flex items-center justify-center relative overflow-hidden">
+                                    <iconify-icon icon="lucide:loader-2" class="text-teal-600 animate-spin text-xl"></iconify-icon>
+                                    <div class="absolute inset-0 rounded-xl border-2 border-teal-500/10 animate-pulse"></div>
+                                </div>
+                                <div>
+                                    <p class="text-sm font-bold text-gray-900">Retrying Savings transfer...</p>
+                                    <p class="text-[11px] text-gray-500 font-medium flex items-center gap-1">
+                                        <span class="inline-block w-1 h-1 rounded-full bg-amber-400 animate-ping"></span>
+                                        Connecting to Marcus HYSA
+                                    </p>
+                                </div>
+                            </div>
+                            <div class="text-right">
+                                <span id="countdown-timer" class="text-[10px] font-black text-teal-600 tracking-tighter uppercase">03s</span>
+                            </div>
+                        </div>
+                        <div class="relative w-full h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                            <div id="retry-progress-bar" class="absolute left-0 top-0 h-full bg-gradient-to-r from-teal-500 via-amber-400 to-teal-400 w-0 transition-all duration-[3000ms] ease-linear"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Month Grouping -->
+            <div class="mb-8">
+                <h2 class="text-xs font-bold uppercase tracking-widest text-gray-400 mb-4">September 2023</h2>
+                <div class="bg-white rounded-[24px] p-5 custom-shadow mb-4 border border-black/[0.02] opacity-70 group">
+                    <div class="flex justify-between items-start mb-4">
+                        <div class="flex flex-col">
+                            <span class="text-sm text-gray-500 font-medium">Sep 28, 2023</span>
+                            <span class="text-2xl font-black text-gray-900">$1,200.00</span>
+                        </div>
+                        <div class="px-3 py-1.5 rounded-full text-[11px] font-bold status-badge-completed flex items-center gap-1.5 uppercase tracking-wide">
+                            <iconify-icon icon="lucide:check-circle-2" class="text-sm"></iconify-icon>
+                            Completed
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- End of Timeline Indicator -->
+            <div class="flex flex-col items-center justify-center py-10 text-gray-400 gap-2">
+                <iconify-icon icon="lucide:scroll-text" class="text-3xl opacity-20"></iconify-icon>
+                <p class="text-xs font-medium italic">End of history</p>
+            </div>
+        </main>
+
+        <!-- Bottom Navigation Spacer (Safe Area) -->
+        <footer class="shrink-0 h-[34px] bg-white"></footer>
+
+        <!-- Toast/Feedback (Hidden by default) -->
+        <div id="empty-state-overlay" class="hidden fixed inset-0 bg-[#F8F8F8] z-50 flex items-center justify-center px-10">
+            <div class="text-center space-y-6 max-w-[280px]">
+                <div class="w-24 h-24 bg-white rounded-[40px] custom-shadow flex items-center justify-center mx-auto">
+                    <iconify-icon icon="lucide:history" class="text-4xl text-[#0EA5A5]/20"></iconify-icon>
+                </div>
+                <div class="space-y-2">
+                    <h3 class="text-lg font-black text-gray-900">No splits yet</h3>
+                    <p class="text-sm text-gray-500 leading-relaxed">
+                        Your transaction history will appear here once your first deposit is detected and split.
+                    </p>
+                </div>
+                <button class="w-full py-4 bg-[#0EA5A5] text-white rounded-[18px] font-bold shadow-lg shadow-[#0EA5A5]/20 active:scale-95 transition-all">
+                    Link Income Account
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Interactive expansion simulation (UI only)
+        document.querySelectorAll('.active\\:scale-\\[0\\.98\\]').forEach(card => {
+            card.addEventListener('click', () => {
+                // Just a visual flash to show interaction works
+                card.classList.add('bg-gray-50');
+                setTimeout(() => card.classList.remove('bg-gray-50'), 150);
+            });
+        });
+
+        // Filter button simple feedback
+        document.getElementById('filter-btn').addEventListener('click', () => {
+            console.log('Filter clicked');
+        });
+
+        // Retry logic simulation
+        const retryBtn = document.getElementById('retry-action-btn');
+        if (retryBtn) {
+            retryBtn.addEventListener('click', function(e) {
+                e.stopPropagation();
+                const footer = document.getElementById('failed-card-footer');
+                const retrying = document.getElementById('retrying-state');
+                const bar = document.getElementById('retry-progress-bar');
+                const badge = document.getElementById('failed-status-badge');
+                const timer = document.getElementById('countdown-timer');
+                const card = document.getElementById('failed-split-card');
+
+                // Visual transition
+                footer.classList.add('opacity-0', 'scale-95');
+                
+                setTimeout(() => {
+                    footer.classList.add('hidden');
+                    retrying.classList.remove('hidden');
+                    retrying.classList.add('opacity-100');
+                    
+                    // Change status badge style to "Retrying"
+                    badge.classList.remove('status-badge-failed');
+                    badge.classList.add('bg-amber-50', 'text-amber-600');
+                    badge.innerHTML = '<iconify-icon icon="lucide:refresh-cw" class="text-sm animate-spin"></iconify-icon> Retrying...';
+                    
+                    // Card subtle highlighting
+                    card.classList.add('ring-1', 'ring-teal-500/20', 'border-teal-500/10');
+                    
+                    // Start progress bar animation
+                    setTimeout(() => bar.style.width = '100%', 100);
+
+                    // Countdown simulation
+                    let seconds = 3;
+                    const interval = setInterval(() => {
+                        seconds--;
+                        timer.innerText = `0${seconds}s`;
+                        if (seconds <= 0) {
+                            clearInterval(interval);
+                            // Final success state transformation
+                            badge.classList.remove('bg-amber-50', 'text-amber-600');
+                            badge.classList.add('status-badge-completed');
+                            badge.innerHTML = '<iconify-icon icon="lucide:check-circle-2" class="text-sm"></iconify-icon> Completed';
+                            
+                            retrying.innerHTML = `
+                                <div class="flex items-center gap-3 py-1 animate-in fade-in duration-500">
+                                    <div class="w-8 h-8 rounded-full bg-emerald-100 flex items-center justify-center">
+                                        <iconify-icon icon="lucide:check" class="text-emerald-600"></iconify-icon>
+                                    </div>
+                                    <div>
+                                        <p class="text-sm font-bold text-emerald-600">Transfer successful!</p>
+                                        <p class="text-[10px] text-gray-400">Transaction ID: #FS-92831</p>
+                                    </div>
+                                </div>
+                            `;
+                            card.classList.remove('ring-1', 'ring-teal-500/20', 'border-teal-500/10');
+                            card.classList.add('opacity-70');
+                        }
+                    }, 1000);
+                }, 300);
+            });
+        }
+    </script>
+</body>
+</html>

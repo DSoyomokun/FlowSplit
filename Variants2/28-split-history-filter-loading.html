@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Split History - FlowSplit</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://code.iconify.design/iconify-icon/1.0.7/iconify-icon.min.js"></script>
+    <meta name="view-transition" content="same-origin">
+    <style>
+        @import url('https://api.fontshare.com/v2/css?f[]=satoshi@900,700,500,400&display=swap');
+
+        :root {
+            --teal-accent: #0EA5A5;
+            --bg-offwhite: #F8F8F8;
+            --card-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.05);
+        }
+
+        body {
+            font-family: 'Satoshi', sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .custom-shadow {
+            box-shadow: var(--card-shadow);
+        }
+
+        /* View Transitions */
+        @view-transition {
+            navigation: auto;
+        }
+
+        .status-badge-completed {
+            background-color: #ECFDF5;
+            color: #059669;
+        }
+        .status-badge-pending {
+            background-color: #FFFBEB;
+            color: #D97706;
+        }
+        .status-badge-failed {
+            background-color: #FEF2F2;
+            color: #DC2626;
+        }
+
+        .hide-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .hide-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+
+        .shimmer {
+            background: linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.6) 50%, rgba(255,255,255,0) 100%);
+            background-size: 200% 100%;
+            animation: shimmer 1.5s infinite;
+        }
+
+        @keyframes shimmer {
+            0% { background-position: -200% 0; }
+            100% { background-position: 200% 0; }
+        }
+
+        @keyframes rotate {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        .animate-spin-slow {
+            animation: rotate 2s linear infinite;
+        }
+    </style>
+</head>
+<body>
+    <div class="w-full h-screen bg-[#F8F8F8] flex flex-col overflow-hidden">
+        <!-- Header Section -->
+        <header class="shrink-0 pt-14 px-6 pb-4 bg-white border-b border-black/[0.04] z-10" style="view-transition-name: main-nav">
+            <div class="flex items-center justify-between mb-4">
+                <div class="flex items-center gap-3">
+                    <a href="#" id="back-button" class="w-10 h-10 flex items-center justify-center rounded-full hover:bg-gray-50 transition-colors">
+                        <iconify-icon icon="lucide:chevron-left" class="text-2xl text-gray-800"></iconify-icon>
+                    </a>
+                    <h1 class="text-xl font-bold text-gray-900 tracking-tight">Split History</h1>
+                </div>
+                <button id="filter-btn" class="w-10 h-10 flex items-center justify-center rounded-full border border-black/[0.04] bg-white custom-shadow hover:scale-105 active:scale-95 transition-all">
+                    <iconify-icon icon="lucide:sliders-horizontal" class="text-lg text-gray-600"></iconify-icon>
+                </button>
+            </div>
+
+            <!-- Active Filter Chips -->
+            <div id="active-filters-container" class="flex gap-2 overflow-x-auto hide-scrollbar hidden">
+                <div class="shrink-0 px-3 py-1.5 bg-[#0EA5A5]/10 border border-[#0EA5A5]/20 rounded-full flex items-center gap-2">
+                    <span class="text-[11px] font-bold text-[#0EA5A5] uppercase tracking-wider">Showing: Completed splits</span>
+                    <button id="clear-filters" class="flex items-center text-[#0EA5A5]">
+                        <iconify-icon icon="lucide:x" class="text-sm"></iconify-icon>
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Content Area -->
+        <main class="relative flex-1 overflow-y-auto hide-scrollbar px-6 py-6" style="view-transition-name: main-content">
+            
+            <!-- Filtering Loader Overlay -->
+            <div id="filtering-overlay" class="hidden absolute inset-0 z-20 flex flex-col items-center justify-start pt-20 bg-[#F8F8F8]/40 backdrop-blur-[2px] transition-opacity duration-300">
+                <div class="bg-white px-6 py-4 rounded-2xl shadow-xl flex items-center gap-3 border border-black/[0.04]">
+                    <iconify-icon icon="lucide:loader-2" class="text-xl text-[#0EA5A5] animate-spin"></iconify-icon>
+                    <span class="text-sm font-bold text-gray-700">Filtering history...</span>
+                </div>
+            </div>
+
+            <div id="history-list-container" class="transition-opacity duration-300">
+                <!-- Month Grouping -->
+                <div class="mb-8">
+                    <h2 class="text-xs font-bold uppercase tracking-widest text-gray-400 mb-4">October 2023</h2>
+                    
+                    <!-- Card 1: Completed -->
+                    <div class="history-card bg-white rounded-[24px] p-5 custom-shadow mb-4 border border-black/[0.02] active:scale-[0.98] transition-transform cursor-pointer group">
+                        <div class="flex justify-between items-start mb-4">
+                            <div class="flex flex-col">
+                                <span class="text-sm text-gray-500 font-medium">Oct 24, 2023</span>
+                                <span class="text-2xl font-black text-gray-900">$1,200.00</span>
+                            </div>
+                            <div class="px-3 py-1.5 rounded-full text-[11px] font-bold status-badge-completed flex items-center gap-1.5 uppercase tracking-wide">
+                                <iconify-icon icon="lucide:check-circle-2" class="text-sm"></iconify-icon>
+                                Completed
+                            </div>
+                        </div>
+                        <div class="flex items-center justify-between border-t border-gray-50 pt-4">
+                            <span class="text-sm text-gray-600">Split into 3 buckets</span>
+                            <iconify-icon icon="lucide:chevron-right" class="text-gray-300 group-hover:text-gray-500 transition-colors"></iconify-icon>
+                        </div>
+                    </div>
+
+                    <!-- Card 2: Pending (Visualizing Expanded State) -->
+                    <div class="history-card bg-white rounded-[24px] p-5 custom-shadow mb-4 border border-[#0EA5A5]/20 ring-1 ring-[#0EA5A5]/10">
+                        <div class="flex justify-between items-start mb-4">
+                            <div class="flex flex-col">
+                                <span class="text-sm text-gray-500 font-medium">Oct 18, 2023</span>
+                                <span class="text-2xl font-black text-gray-900">$850.00</span>
+                            </div>
+                            <div class="px-3 py-1.5 rounded-full text-[11px] font-bold status-badge-pending flex items-center gap-1.5 uppercase tracking-wide">
+                                <iconify-icon icon="lucide:alert-circle" class="text-sm"></iconify-icon>
+                                Pending
+                            </div>
+                        </div>
+                        
+                        <!-- Expanded Details Area -->
+                        <div class="space-y-4 pt-4 border-t border-gray-50">
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center gap-3">
+                                    <div class="w-8 h-8 rounded-lg bg-emerald-50 flex items-center justify-center">
+                                        <iconify-icon icon="lucide:church" class="text-emerald-600"></iconify-icon>
+                                    </div>
+                                    <div>
+                                        <p class="text-sm font-bold text-gray-900">Tithe</p>
+                                        <p class="text-[11px] text-gray-500 uppercase">Wells Fargo • 4920</p>
+                                    </div>
+                                </div>
+                                <div class="text-right">
+                                    <p class="text-sm font-bold text-gray-900">$120.00</p>
+                                    <p class="text-[10px] text-emerald-600 font-bold uppercase">Success</p>
+                                </div>
+                            </div>
+
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center gap-3">
+                                    <div class="w-8 h-8 rounded-lg bg-amber-50 flex items-center justify-center">
+                                        <iconify-icon icon="lucide:piggy-bank" class="text-amber-600"></iconify-icon>
+                                    </div>
+                                    <div>
+                                        <p class="text-sm font-bold text-gray-900">Savings</p>
+                                        <p class="text-[11px] text-gray-500 uppercase">Marcus HYSA • 1102</p>
+                                    </div>
+                                </div>
+                                <div class="text-right">
+                                    <p class="text-sm font-bold text-gray-900">$500.00</p>
+                                    <p class="text-[10px] text-amber-600 font-bold uppercase">In Progress</p>
+                                </div>
+                            </div>
+                            
+                            <button id="status-retry-btn" class="w-full py-3 bg-[#0EA5A5]/5 text-[#0EA5A5] rounded-xl text-sm font-bold mt-2 hover:bg-[#0EA5A5]/10 transition-colors active:scale-95">
+                                View Real-time Status
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Card 3: Failed -->
+                    <div class="history-card bg-white rounded-[24px] p-5 custom-shadow mb-4 border border-black/[0.02] group">
+                        <div class="flex justify-between items-start mb-4">
+                            <div class="flex flex-col">
+                                <span class="text-sm text-gray-500 font-medium">Oct 05, 2023</span>
+                                <span class="text-2xl font-black text-gray-900">$2,100.00</span>
+                            </div>
+                            <div class="px-3 py-1.5 rounded-full text-[11px] font-bold status-badge-failed flex items-center gap-1.5 uppercase tracking-wide">
+                                <iconify-icon icon="lucide:x-circle" class="text-sm"></iconify-icon>
+                                Action Needed
+                            </div>
+                        </div>
+                        <div class="flex items-center justify-between border-t border-gray-50 pt-4">
+                            <div class="flex items-center gap-2">
+                                <div class="flex -space-x-2">
+                                    <div class="w-6 h-6 rounded-full border-2 border-white bg-gray-100 flex items-center justify-center text-[10px] font-bold">T</div>
+                                    <div class="w-6 h-6 rounded-full border-2 border-white bg-gray-100 flex items-center justify-center text-[10px] font-bold">S</div>
+                                    <div class="w-6 h-6 rounded-full border-2 border-white bg-gray-100 flex items-center justify-center text-[10px] font-bold text-rose-500">!</div>
+                                </div>
+                                <span class="text-xs text-rose-600 font-bold">1 transfer failed</span>
+                            </div>
+                            <button class="px-4 py-2 bg-rose-500 text-white text-xs font-bold rounded-lg hover:bg-rose-600 active:scale-95 transition-all shadow-sm shadow-rose-200">
+                                Retry Now
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- End of Timeline Indicator -->
+                <div id="history-footer" class="flex flex-col items-center justify-center py-10 text-gray-400 gap-2">
+                    <iconify-icon icon="lucide:scroll-text" class="text-3xl opacity-20"></iconify-icon>
+                    <p class="text-xs font-medium italic">End of history</p>
+                </div>
+            </div>
+        </main>
+
+        <!-- Bottom Navigation Spacer (Safe Area) -->
+        <footer class="shrink-0 h-[34px] bg-white"></footer>
+    </div>
+
+    <script>
+        const filterBtn = document.getElementById('filter-btn');
+        const overlay = document.getElementById('filtering-overlay');
+        const listContainer = document.getElementById('history-list-container');
+        const filterChips = document.getElementById('active-filters-container');
+        const clearFiltersBtn = document.getElementById('clear-filters');
+        const cards = document.querySelectorAll('.history-card');
+
+        // Simulate Filter Logic
+        filterBtn.addEventListener('click', () => {
+            // 1. Start loading state
+            overlay.classList.remove('hidden');
+            overlay.classList.add('flex');
+            listContainer.classList.add('opacity-30');
+            
+            // 2. Simulate processing delay
+            setTimeout(() => {
+                // 3. Update UI to show filtered results
+                overlay.classList.add('hidden');
+                overlay.classList.remove('flex');
+                listContainer.classList.remove('opacity-30');
+                filterChips.classList.remove('hidden');
+                filterChips.classList.add('flex');
+
+                // Visual feedback: hide some cards to simulate filter
+                cards.forEach((card, index) => {
+                    if (index > 0) card.classList.add('hidden');
+                });
+                
+                // Trigger a small scroll to ensure the user sees the active filter
+                document.querySelector('main').scrollTo({ top: 0, behavior: 'smooth' });
+            }, 1200);
+        });
+
+        // Reset Filters
+        clearFiltersBtn.addEventListener('click', () => {
+            filterChips.classList.add('hidden');
+            filterChips.classList.remove('flex');
+            cards.forEach(card => card.classList.remove('hidden'));
+        });
+
+        // Card Click Interaction
+        cards.forEach(card => {
+            card.addEventListener('click', () => {
+                card.classList.add('bg-gray-50');
+                setTimeout(() => card.classList.remove('bg-gray-50'), 150);
+            });
+        });
+    </script>
+</body>
+</html>

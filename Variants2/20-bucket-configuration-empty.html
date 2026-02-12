@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="view-transition" content="same-origin">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://code.iconify.design/iconify-icon/1.0.7/iconify-icon.min.js"></script>
+  <link rel="prefetch" href="https://p.superdesign.dev/draft/b92e5b63-41fc-4fe3-9b06-6ad7905f3d06" as="document">
+  <link rel="prefetch" href="https://p.superdesign.dev/draft/14957248-c82c-4b1c-912f-662210d8c6e7" as="document">
+  <link rel="prefetch" href="https://p.superdesign.dev/draft/7e7b49b5-8406-4512-9a10-b1bc6ae83ec8" as="document">
+  <link rel="prefetch" href="https://p.superdesign.dev/draft/9edf1601-6e97-448b-a354-07a7173f694d" as="document">
+  <link rel="prefetch" href="https://p.superdesign.dev/draft/a0993423-dcff-44a1-844c-b807a4158cc3" as="document">
+  <link rel="prefetch" href="https://p.superdesign.dev/draft/5fb4c3e5-74d6-409b-aab3-cc5454a4d41d" as="document">
+  <style>
+    @import url('https://api.fontshare.com/v2/css?f[]=satoshi@900,700,500,400&display=swap');
+    
+    html {
+      background-color: #F8F8F8;
+    }
+
+    body {
+      font-family: 'Satoshi', sans-serif;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+
+    .custom-shadow {
+      box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.05);
+    }
+
+    .teal-accent { color: #0EA5A5; }
+    .bg-teal-accent { background-color: #0EA5A5; }
+    .border-subtle { border: 1px solid rgba(0, 0, 0, 0.04); }
+
+    @view-transition { navigation: auto; }
+    ::view-transition { background-color: #F8F8F8; }
+
+    ::view-transition-old(main-nav),
+    ::view-transition-new(main-nav) {
+        animation: none;
+        mix-blend-mode: normal;
+    }
+
+    ::view-transition-old(main-content) {
+        animation: 0.25s ease-out both fade-out;
+    }
+    ::view-transition-new(main-content) {
+        animation: 0.25s ease-in 0.1s both fade-in;
+    }
+
+    @keyframes fade-out { from { opacity: 1; } to { opacity: 0; } }
+    @keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
+
+    ::view-transition-old(root),
+    ::view-transition-new(root) {
+        animation: none;
+        mix-blend-mode: normal;
+    }
+  </style>
+</head>
+<body>
+  <div class="w-full min-h-screen flex flex-col bg-[#F8F8F8]">
+    <!-- Persistent Header -->
+    <header style="view-transition-name: main-nav" class="w-full pt-14 pb-4 px-6 flex items-center justify-between bg-white border-b border-gray-100 sticky top-0 z-50">
+      <a href="https://p.superdesign.dev/draft/7e7b49b5-8406-4512-9a10-b1bc6ae83ec8" id="nav-back-link" class="w-8 h-8 flex items-center text-gray-400">
+        <iconify-icon icon="lucide:chevron-left" class="text-2xl"></iconify-icon>
+      </a>
+      <h1 class="text-[18px] font-bold tracking-tight text-gray-900">FlowSplit</h1>
+      <button id="nav-menu-btn" class="w-8 h-8 flex items-center justify-end text-gray-600">
+        <iconify-icon icon="lucide:menu" class="text-2xl"></iconify-icon>
+      </button>
+    </header>
+
+    <!-- Dynamic Content -->
+    <main style="view-transition-name: main-content" class="flex-1 w-full p-5 space-y-6 pb-40 flex flex-col">
+      <header>
+        <h2 class="text-2xl font-black text-gray-900 leading-tight">Configure<br>Destination Buckets</h2>
+        <p class="text-gray-500 text-sm mt-2">Review where each split will be delivered.</p>
+      </header>
+
+      <!-- Empty State Container -->
+      <div class="flex-1 flex flex-col items-center justify-center py-12 px-4 text-center">
+        <div class="w-24 h-24 bg-teal-50 rounded-[32px] flex items-center justify-center mb-6">
+          <iconify-icon icon="lucide:layers-2" class="text-5xl text-teal-accent"></iconify-icon>
+        </div>
+        <h3 class="text-xl font-bold text-gray-900 mb-2">No buckets configured yet</h3>
+        <p class="text-gray-500 text-sm max-w-[280px] mb-8 leading-relaxed">
+          Create your first bucket to get started with automated splits and smart money allocation.
+        </p>
+        <button id="create-first-bucket-btn" class="px-8 py-3 bg-teal-accent text-white font-bold rounded-2xl custom-shadow hover:bg-[#0C8F8F] transition-all active:scale-[0.98] flex items-center gap-2">
+          <iconify-icon icon="lucide:plus" class="text-lg"></iconify-icon>
+          Create Bucket
+        </button>
+      </div>
+    </main>
+
+    <!-- Fixed Bottom Actions (Disabled in Empty State) -->
+    <div class="fixed bottom-0 w-full bg-white/90 backdrop-blur-xl border-t border-gray-100 p-6 pb-[34px] flex flex-col gap-3 shadow-[0_-10px_30px_-15px_rgba(0,0,0,0.1)] z-[100]">
+      <button id="confirm-buckets-btn-disabled" class="w-full bg-gray-100 text-gray-400 text-center font-bold py-4 rounded-2xl cursor-not-allowed opacity-60">
+        Continue to Confirmation
+      </button>
+      <p class="text-[11px] text-gray-400 text-center font-medium">
+        Add at least one bucket to proceed with the split.
+      </p>
+    </div>
+  </div>
+</body>
+</html>

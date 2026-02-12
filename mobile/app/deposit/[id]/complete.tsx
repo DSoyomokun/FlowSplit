@@ -1,6 +1,6 @@
 /**
  * Split Complete Screen
- * Success confirmation with allocation summary
+ * Success confirmation with allocation summary - matches Variants2/06-split-complete.html
  *
  * Stories: 65, 66, 67
  */
@@ -12,6 +12,7 @@ import {
   StyleSheet,
   ScrollView,
   Pressable,
+  Platform,
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -19,32 +20,16 @@ import * as Haptics from 'expo-haptics';
 import { Ionicons } from '@expo/vector-icons';
 
 import { Colors, BucketColors } from '@/constants/colors';
-import { FontFamily, FontSize } from '@/constants/typography';
+import { FontFamily, FontSize, LetterSpacing } from '@/constants/typography';
 import { BorderRadius, Spacing } from '@/constants/spacing';
 import { Shadows } from '@/constants/shadows';
-import { Header, Card, Button } from '@/components';
 
 // Mock data for development
 const MOCK_DEPOSIT_AMOUNT = 1200;
 const MOCK_ALLOCATIONS = [
-  {
-    id: 'tithe',
-    name: 'Tithe',
-    amount: 120,
-    color: BucketColors[0],
-  },
-  {
-    id: 'savings',
-    name: 'Savings',
-    amount: 180,
-    color: BucketColors[1],
-  },
-  {
-    id: 'investing',
-    name: 'Investing',
-    amount: 120,
-    color: BucketColors[2],
-  },
+  { id: 'tithe', name: 'Tithe', amount: 120, color: '#0EA5A5' },
+  { id: 'savings', name: 'Savings', amount: 180, color: '#3B82F6' },
+  { id: 'investing', name: 'Investing', amount: 120, color: '#10B981' },
 ];
 
 export default function SplitCompleteScreen() {
@@ -66,19 +51,29 @@ export default function SplitCompleteScreen() {
 
   // Handlers
   const handleManageBuckets = () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    if (Platform.OS !== 'web') {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    }
     router.push('/buckets/configure');
   };
 
   const handleReturnToDashboard = () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    // Navigate to home/dashboard
+    if (Platform.OS !== 'web') {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    }
     router.replace('/(tabs)');
   };
 
   return (
     <View style={styles.container}>
-      <Header />
+      {/* Header */}
+      <View style={styles.header}>
+        <View style={styles.headerButton} />
+        <Text style={styles.headerTitle}>FlowSplit</Text>
+        <Pressable style={styles.headerButton}>
+          <Ionicons name="menu" size={24} color={Colors.text.muted} />
+        </Pressable>
+      </View>
 
       <ScrollView
         style={styles.scrollView}
@@ -92,7 +87,7 @@ export default function SplitCompleteScreen() {
         <View style={styles.iconContainer}>
           <View style={styles.iconOuter}>
             <View style={styles.iconInner}>
-              <Ionicons name="checkmark" size={40} color="white" />
+              <Ionicons name="checkmark" size={36} color="white" />
             </View>
           </View>
         </View>
@@ -106,8 +101,8 @@ export default function SplitCompleteScreen() {
         </View>
 
         {/* Allocation Summary Card */}
-        <Card variant="large" style={styles.summaryCard}>
-          <Text style={styles.sectionLabel}>ALLOCATION SUMMARY</Text>
+        <View style={styles.summaryCard}>
+          <Text style={styles.sectionLabel}>Allocation Summary</Text>
 
           <View style={styles.allocationList}>
             {MOCK_ALLOCATIONS.map((allocation) => (
@@ -126,7 +121,7 @@ export default function SplitCompleteScreen() {
               <Text style={styles.remainderAmount}>{formatCurrency(remainder)}</Text>
             </View>
           </View>
-        </Card>
+        </View>
 
         {/* Manage Buckets Link */}
         <Pressable onPress={handleManageBuckets} style={styles.manageBucketsLink}>
@@ -138,9 +133,12 @@ export default function SplitCompleteScreen() {
 
         {/* Return to Dashboard Button */}
         <View style={styles.actionSection}>
-          <Button onPress={handleReturnToDashboard}>
-            Return to Dashboard
-          </Button>
+          <Pressable
+            style={styles.primaryButton}
+            onPress={handleReturnToDashboard}
+          >
+            <Text style={styles.primaryButtonText}>Return to Dashboard</Text>
+          </Pressable>
         </View>
       </ScrollView>
     </View>
@@ -152,6 +150,32 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: Colors.background,
   },
+
+  // Header
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    height: 64,
+    paddingHorizontal: Spacing.page,
+    backgroundColor: Colors.card,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.gray[100],
+  },
+  headerButton: {
+    width: 32,
+    height: 32,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  headerTitle: {
+    fontFamily: FontFamily.bold,
+    fontSize: 18,
+    color: Colors.text.primary,
+    letterSpacing: -0.25,
+  },
+
+  // ScrollView
   scrollView: {
     flex: 1,
   },
@@ -161,6 +185,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     flexGrow: 1,
   },
+
+  // Icon
   iconContainer: {
     marginBottom: Spacing[8],
   },
@@ -168,7 +194,7 @@ const styles = StyleSheet.create({
     width: 96,
     height: 96,
     borderRadius: 48,
-    backgroundColor: `${Colors.primary.DEFAULT}15`,
+    backgroundColor: `${Colors.primary}15`,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -176,11 +202,13 @@ const styles = StyleSheet.create({
     width: 64,
     height: 64,
     borderRadius: 32,
-    backgroundColor: Colors.primary.DEFAULT,
+    backgroundColor: Colors.primary,
     alignItems: 'center',
     justifyContent: 'center',
-    ...Shadows.button,
+    ...Shadows.buttonPrimary,
   },
+
+  // Message
   messageSection: {
     alignItems: 'center',
     marginBottom: Spacing[10],
@@ -198,26 +226,34 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     paddingHorizontal: Spacing[4],
   },
+
+  // Summary Card
   summaryCard: {
     width: '100%',
+    backgroundColor: Colors.card,
+    borderRadius: BorderRadius.card,
     padding: Spacing[6],
+    borderWidth: 1,
+    borderColor: Colors.border.subtle,
+    ...Shadows.card,
   },
   sectionLabel: {
     fontFamily: FontFamily.black,
     fontSize: FontSize.xs,
     color: Colors.text.muted,
-    letterSpacing: 2,
+    textTransform: 'uppercase',
+    letterSpacing: LetterSpacing.widest,
     marginBottom: Spacing[4],
     paddingHorizontal: Spacing[1],
   },
   allocationList: {
-    gap: Spacing[3],
+    gap: Spacing[4],
   },
   allocationRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: Colors.background,
+    backgroundColor: `${Colors.gray[50]}80`,
     padding: Spacing[3],
     borderRadius: BorderRadius.lg,
   },
@@ -233,14 +269,16 @@ const styles = StyleSheet.create({
   },
   allocationName: {
     fontFamily: FontFamily.bold,
-    fontSize: FontSize.md,
+    fontSize: FontSize.sm,
     color: Colors.text.secondary,
   },
   allocationAmount: {
     fontFamily: FontFamily.black,
-    fontSize: FontSize.md,
+    fontSize: FontSize.sm,
     color: Colors.text.primary,
   },
+
+  // Remainder
   remainderRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -249,35 +287,53 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing[3],
     borderTopWidth: 1,
     borderTopColor: Colors.border.light,
-    marginTop: Spacing[1],
   },
   remainderLabel: {
     fontFamily: FontFamily.bold,
-    fontSize: FontSize.md,
+    fontSize: FontSize.sm,
     color: Colors.text.muted,
   },
   remainderAmount: {
     fontFamily: FontFamily.black,
-    fontSize: FontSize.md,
-    color: Colors.primary.DEFAULT,
+    fontSize: FontSize.sm,
+    color: Colors.primary,
   },
+
+  // Manage Buckets Link
   manageBucketsLink: {
     width: '100%',
     alignItems: 'center',
     paddingVertical: Spacing[4],
-    marginTop: Spacing[4],
+    marginTop: Spacing[8],
   },
   manageBucketsText: {
     fontFamily: FontFamily.bold,
     fontSize: FontSize.md,
     color: Colors.text.muted,
   },
+
+  // Spacer
   spacer: {
     flex: 1,
     minHeight: Spacing[8],
   },
+
+  // Action Section
   actionSection: {
     width: '100%',
     paddingTop: Spacing[6],
+  },
+  primaryButton: {
+    backgroundColor: Colors.primary,
+    borderRadius: BorderRadius.xl,
+    height: 56,
+    alignItems: 'center',
+    justifyContent: 'center',
+    ...Shadows.buttonPrimary,
+  },
+  primaryButtonText: {
+    fontFamily: FontFamily.bold,
+    fontSize: FontSize.md,
+    color: 'white',
   },
 });

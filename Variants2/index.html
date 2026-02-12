@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FlowSplit UI Index</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    @import url('https://api.fontshare.com/v2/css?f[]=satoshi@900,700,500,400&display=swap');
+
+    html {
+      background-color: #F8F8F8;
+    }
+
+    body {
+      font-family: 'Satoshi', sans-serif;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+
+    .card-shadow {
+      box-shadow: 0 6px 24px -8px rgba(0, 0, 0, 0.08);
+    }
+  </style>
+</head>
+<body class="min-h-screen bg-[#F8F8F8]">
+  <div class="max-w-5xl mx-auto px-6 py-12">
+    <header class="mb-10">
+      <h1 class="text-3xl md:text-4xl font-black text-gray-900">FlowSplit Screens</h1>
+      <p class="text-gray-500 mt-2">Index of all UI pages in this workspace. Grouped by category, no implied order.</p>
+    </header>
+
+    <section class="mb-10">
+      <h2 class="text-sm font-black uppercase tracking-widest text-gray-400 mb-4">Happy Path</h2>
+      <div class="grid gap-4 md:grid-cols-2">
+        <a class="bg-white rounded-2xl p-5 border border-gray-100 card-shadow" href="04-bucket-configuration.html">Bucket Configuration</a>
+        <a class="bg-white rounded-2xl p-5 border border-gray-100 card-shadow" href="05-confirmation.html">Confirmation</a>
+        <a class="bg-white rounded-2xl p-5 border border-gray-100 card-shadow" href="02-deposit-setup.html">Deposit Setup</a>
+        <a class="bg-white rounded-2xl p-5 border border-gray-100 card-shadow" href="01-direct-interaction-donut-splitter.html">Direct Interaction Donut Splitter</a>
+        <a class="bg-white rounded-2xl p-5 border border-gray-100 card-shadow" href="06-split-complete.html">Split Complete</a>
+        <a class="bg-white rounded-2xl p-5 border border-gray-100 card-shadow" href="12-split-history-ledger.html">Split History Ledger</a>
+        <a class="bg-white rounded-2xl p-5 border border-gray-100 card-shadow" href="03-split-allocation.html">Split Allocation</a>
+      </div>
+    </section>
+
+    <section class="mb-10">
+      <h2 class="text-sm font-black uppercase tracking-widest text-gray-400 mb-4">Split Allocation States</h2>
+      <div class="grid gap-4 md:grid-cols-2">
+        <a class="bg-white rounded-2xl p-5 border border-gray-100 card-shadow" href="25-split-allocation-confirmation-loading.html">Confirmation Loading</a>
+        <a class="bg-white rounded-2xl p-5 border border-gray-100 card-shadow" href="21-split-allocation-error.html">Error</a>
+        <a class="bg-white rounded-2xl p-5 border border-gray-100 card-shadow" href="24-split-allocation-loading.html">Loading</a>
+      </div>
+    </section>
+
+    <section class="mb-10">
+      <h2 class="text-sm font-black uppercase tracking-widest text-gray-400 mb-4">Deposit Setup States</h2>
+      <div class="grid gap-4 md:grid-cols-2">
+        <a class="bg-white rounded-2xl p-5 border border-gray-100 card-shadow" href="23-deposit-setup-error.html">Error</a>
+        <a class="bg-white rounded-2xl p-5 border border-gray-100 card-shadow" href="26-deposit-setup-loading.html">Loading</a>
+        <a class="bg-white rounded-2xl p-5 border border-gray-100 card-shadow" href="27-deposit-setup-validation-error.html">Validation Error</a>
+      </div>
+    </section>
+
+    <section class="mb-10">
+      <h2 class="text-sm font-black uppercase tracking-widest text-gray-400 mb-4">Bucket Configuration States</h2>
+      <div class="grid gap-4 md:grid-cols-2">
+        <a class="bg-white rounded-2xl p-5 border border-gray-100 card-shadow" href="20-bucket-configuration-empty.html">Empty</a>
+        <a class="bg-white rounded-2xl p-5 border border-gray-100 card-shadow" href="19-bucket-configuration-error.html">Error</a>
+        <a class="bg-white rounded-2xl p-5 border border-gray-100 card-shadow" href="22-bucket-configuration-loading.html">Loading</a>
+      </div>
+    </section>
+
+    <section class="mb-10">
+      <h2 class="text-sm font-black uppercase tracking-widest text-gray-400 mb-4">Confirmation States</h2>
+      <div class="grid gap-4 md:grid-cols-2">
+        <a class="bg-white rounded-2xl p-5 border border-gray-100 card-shadow" href="16-confirmation-error.html">Error</a>
+        <a class="bg-white rounded-2xl p-5 border border-gray-100 card-shadow" href="15-confirmation-loading.html">Loading</a>
+        <a class="bg-white rounded-2xl p-5 border border-gray-100 card-shadow" href="17-confirmation-network-error.html">Network Error</a>
+      </div>
+    </section>
+
+    <section class="mb-10">
+      <h2 class="text-sm font-black uppercase tracking-widest text-gray-400 mb-4">Split Complete States</h2>
+      <div class="grid gap-4 md:grid-cols-2">
+        <a class="bg-white rounded-2xl p-5 border border-gray-100 card-shadow" href="09-split-complete-manual-action.html">Manual Action</a>
+        <a class="bg-white rounded-2xl p-5 border border-gray-100 card-shadow" href="07-split-complete-partial.html">Partial Success</a>
+        <a class="bg-white rounded-2xl p-5 border border-gray-100 card-shadow" href="08-split-processing-retry.html">Retry</a>
+      </div>
+    </section>
+
+    <section class="mb-10">
+      <h2 class="text-sm font-black uppercase tracking-widest text-gray-400 mb-4">Split History States</h2>
+      <div class="grid gap-4 md:grid-cols-2">
+        <a class="bg-white rounded-2xl p-5 border border-gray-100 card-shadow" href="28-split-history-filter-loading.html">Filter Loading</a>
+        <a class="bg-white rounded-2xl p-5 border border-gray-100 card-shadow" href="13-loading-split-history.html">Loading</a>
+        <a class="bg-white rounded-2xl p-5 border border-gray-100 card-shadow" href="14-split-history-retry-animation.html">Retry Animation</a>
+      </div>
+    </section>
+
+    <section class="mb-4">
+      <h2 class="text-sm font-black uppercase tracking-widest text-gray-400 mb-4">Docs</h2>
+      <div class="grid gap-4 md:grid-cols-2">
+        <a class="bg-white rounded-2xl p-5 border border-gray-100 card-shadow" href="10-components-library.html">Component Library</a>
+        <a class="bg-white rounded-2xl p-5 border border-gray-100 card-shadow" href="flowsplit-react-native-expo-implementation.md">Design System (MD)</a>
+        <a class="bg-white rounded-2xl p-5 border border-gray-100 card-shadow" href="11-expo-setup-guide.html">Expo Setup Guide</a>
+      </div>
+    </section>
+  </div>
+</body>
+</html>

@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="view-transition" content="same-origin">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://code.iconify.design/iconify-icon/1.0.7/iconify-icon.min.js"></script>
+  <link rel="prefetch" href="https://p.superdesign.dev/draft/b92e5b63-41fc-4fe3-9b06-6ad7905f3d06" as="document">
+  <link rel="prefetch" href="https://p.superdesign.dev/draft/14957248-c82c-4b1c-912f-662210d8c6e7" as="document">
+  <link rel="prefetch" href="https://p.superdesign.dev/draft/7e7b49b5-8406-4512-9a10-b1bc6ae83ec8" as="document">
+  <link rel="prefetch" href="https://p.superdesign.dev/draft/9edf1601-6e97-448b-a354-07a7173f694d" as="document">
+  <link rel="prefetch" href="https://p.superdesign.dev/draft/5fb4c3e5-74d6-409b-aab3-cc5454a4d41d" as="document">
+  <style>
+    @import url('https://api.fontshare.com/v2/css?f[]=satoshi@900,700,500,400&display=swap');
+    
+    html {
+      background-color: #F8F8F8;
+    }
+
+    body {
+      font-family: 'Satoshi', sans-serif;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+
+    .custom-shadow {
+      box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.05);
+    }
+
+    .teal-accent { color: #0EA5A5; }
+    .bg-teal-accent { background-color: #0EA5A5; }
+    .border-subtle { border: 1px solid rgba(0, 0, 0, 0.04); }
+
+    .skeleton {
+      position: relative;
+      overflow: hidden;
+      background-color: #f1f5f9;
+      border-radius: 4px;
+    }
+    
+    .skeleton::after {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.5), transparent);
+      animation: shimmer 1.5s infinite;
+    }
+
+    @keyframes shimmer {
+      0% { transform: translateX(-100%); }
+      100% { transform: translateX(100%); }
+    }
+
+    @view-transition { navigation: auto; }
+    ::view-transition { background-color: #F8F8F8; }
+  </style>
+</head>
+<body>
+  <div class="w-full min-h-screen flex flex-col bg-[#F8F8F8]">
+    <!-- Persistent Header -->
+    <header style="view-transition-name: header-nav" class="w-full h-[64px] px-6 flex items-center justify-between bg-white border-b border-gray-100 sticky top-0 z-50">
+      <div class="w-8">
+        <a href="https://p.superdesign.dev/draft/7e7b49b5-8406-4512-9a10-b1bc6ae83ec8" id="back-link" class="text-gray-400 flex items-center">
+          <iconify-icon icon="lucide:chevron-left" class="text-2xl"></iconify-icon>
+        </a>
+      </div>
+      <h1 class="text-[18px] font-bold tracking-tight text-gray-900">FlowSplit</h1>
+      <button id="nav-menu-btn" class="w-8 h-8 flex items-center justify-end text-gray-600">
+        <iconify-icon icon="lucide:menu" class="text-2xl"></iconify-icon>
+      </button>
+    </header>
+
+    <!-- Dynamic Content -->
+    <main style="view-transition-name: main-content" class="flex-1 overflow-auto pt-6 px-6 pb-40 space-y-8">
+      
+      <!-- Summary Title -->
+      <div class="space-y-1">
+        <h2 class="text-2xl font-black text-gray-900">Review Split</h2>
+        <div class="flex items-center gap-2">
+          <p class="text-sm text-teal-accent font-medium animate-pulse">Verifying transfer destinations...</p>
+        </div>
+      </div>
+
+      <!-- Main Deposit Card (Skeleton State) -->
+      <section class="bg-white rounded-[32px] p-6 border-subtle custom-shadow opacity-90">
+        <div class="flex items-center gap-4 mb-4">
+          <div class="w-12 h-12 bg-gray-100 rounded-2xl flex items-center justify-center text-gray-300">
+            <iconify-icon icon="lucide:arrow-down-to-dot" class="text-2xl"></iconify-icon>
+          </div>
+          <div class="space-y-2">
+            <p class="text-[11px] font-bold text-gray-300 uppercase tracking-widest">Incoming Deposit</p>
+            <div class="h-6 w-24 skeleton"></div>
+          </div>
+        </div>
+        <div class="pt-4 border-t border-gray-50 flex items-center justify-between">
+          <div class="flex items-center gap-2">
+            <div class="w-4 h-4 rounded-full skeleton"></div>
+            <div class="h-3 w-32 skeleton"></div>
+          </div>
+          <div class="h-2 w-12 skeleton"></div>
+        </div>
+      </section>
+
+      <!-- Distribution Breakdown (Skeleton State) -->
+      <div class="space-y-4">
+        <h3 class="text-xs font-black text-gray-400 uppercase tracking-widest px-1">Distribution</h3>
+        
+        <div class="space-y-3 opacity-60">
+          <!-- Tithe Skeleton -->
+          <div class="bg-white p-4 rounded-2xl border-subtle flex items-center justify-between">
+            <div class="flex items-center gap-3">
+              <div class="w-3 h-3 rounded-full skeleton"></div>
+              <div class="space-y-2">
+                <div class="h-4 w-20 skeleton"></div>
+                <div class="h-2 w-32 skeleton"></div>
+              </div>
+            </div>
+            <div class="flex flex-col items-end gap-2">
+              <div class="h-4 w-16 skeleton"></div>
+              <div class="h-2 w-8 skeleton"></div>
+            </div>
+          </div>
+
+          <!-- Savings Skeleton -->
+          <div class="bg-white p-4 rounded-2xl border-subtle flex items-center justify-between">
+            <div class="flex items-center gap-3">
+              <div class="w-3 h-3 rounded-full skeleton"></div>
+              <div class="space-y-2">
+                <div class="h-4 w-24 skeleton"></div>
+                <div class="h-2 w-36 skeleton"></div>
+              </div>
+            </div>
+            <div class="flex flex-col items-end gap-2">
+              <div class="h-4 w-16 skeleton"></div>
+              <div class="h-2 w-8 skeleton"></div>
+            </div>
+          </div>
+
+          <!-- Investing Skeleton -->
+          <div class="bg-white p-4 rounded-2xl border-subtle flex items-center justify-between">
+            <div class="flex items-center gap-3">
+              <div class="w-3 h-3 rounded-full skeleton"></div>
+              <div class="space-y-2">
+                <div class="h-4 w-20 skeleton"></div>
+                <div class="h-2 w-32 skeleton"></div>
+              </div>
+            </div>
+            <div class="flex flex-col items-end gap-2">
+              <div class="h-4 w-16 skeleton"></div>
+              <div class="h-2 w-8 skeleton"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Details List (Skeleton State) -->
+      <div class="bg-white rounded-2xl p-6 border-subtle custom-shadow opacity-80">
+        <div class="space-y-4">
+          <div class="flex justify-between items-center">
+            <span class="text-xs text-gray-400 font-medium">Execution</span>
+            <div class="h-3 w-20 skeleton"></div>
+          </div>
+          <div class="flex justify-between items-center">
+            <span class="text-xs text-gray-400 font-medium">Service Fees</span>
+            <div class="h-3 w-12 skeleton"></div>
+          </div>
+          <div class="pt-4 border-t border-gray-50 flex justify-between items-center">
+            <span class="text-sm font-bold text-gray-900">Total Allocated</span>
+            <div class="h-6 w-24 skeleton"></div>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <!-- Fixed Bottom Actions (Disabled State) -->
+    <div class="fixed bottom-0 w-full bg-white/90 backdrop-blur-xl border-t border-gray-100 p-6 flex flex-col gap-3 shadow-[0_-10px_30px_-15px_rgba(0,0,0,0.1)] z-[100] pb-[34px]">
+      <button id="confirm-final-split-btn" class="w-full bg-teal-accent/60 cursor-not-allowed text-white flex items-center justify-center gap-3 font-bold py-4 rounded-2xl transition-all shadow-none pointer-events-none">
+        <iconify-icon icon="lucide:loader-2" class="text-xl animate-spin"></iconify-icon>
+        Preparing Split...
+      </button>
+      <a href="https://p.superdesign.dev/draft/7e7b49b5-8406-4512-9a10-b1bc6ae83ec8" id="edit-split-link" class="w-full bg-transparent text-gray-300 font-medium py-2 rounded-xl text-center text-sm pointer-events-none">
+        Back to adjustments
+      </a>
+    </div>
+  </div>
+</body>
+</html>

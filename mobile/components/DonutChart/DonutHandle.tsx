@@ -5,18 +5,9 @@
 
 import React from 'react';
 import { Circle, G } from 'react-native-svg';
-import Animated, {
-  useAnimatedProps,
-  useSharedValue,
-  withSpring,
-} from 'react-native-reanimated';
 
 import { DonutConfig, DEFAULT_CONFIG } from './types';
 import { getPointOnCircle } from './useDonutChart';
-import { SpringConfig, AnimationValues } from '@/constants/animations';
-
-const AnimatedCircle = Animated.createAnimatedComponent(Circle);
-const AnimatedG = Animated.createAnimatedComponent(G);
 
 interface DonutHandleProps {
   percentage: number;
@@ -29,32 +20,21 @@ export function DonutHandle({
   config = DEFAULT_CONFIG,
   isActive = false,
 }: DonutHandleProps) {
-  const scale = useSharedValue(1);
-
-  React.useEffect(() => {
-    scale.value = withSpring(
-      isActive ? AnimationValues.handleGrabScale : 1,
-      SpringConfig.dragHandle
-    );
-  }, [isActive]);
-
   const position = getPointOnCircle(config.center, config.radius, percentage);
 
-  const animatedProps = useAnimatedProps(() => ({
-    transform: [{ scale: scale.value }],
-  }));
+  // Scale handle when active (simple state-based, not animated)
+  const handleRadius = isActive ? config.handleRadius * 1.3 : config.handleRadius;
 
   return (
     <G>
       {/* Handle Circle */}
-      <AnimatedCircle
+      <Circle
         cx={position.x}
         cy={position.y}
-        r={config.handleRadius}
+        r={handleRadius}
         fill="#FFFFFF"
-        stroke="#CBD5E1"
-        strokeWidth={1}
-        animatedProps={animatedProps}
+        stroke={isActive ? '#0EA5A5' : '#CBD5E1'}
+        strokeWidth={isActive ? 2 : 1}
       />
     </G>
   );

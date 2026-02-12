@@ -88,7 +88,7 @@ function getVariantStyles(variant: BannerVariant) {
           backgroundColor: Colors.error.bg,
           borderColor: Colors.error.border,
         } as ViewStyle,
-        icon: 'alert-triangle' as const,
+        icon: 'warning' as const,
         iconColor: Colors.error.bgSolid,
         titleColor: Colors.error.textDark,
         descColor: Colors.error.text,

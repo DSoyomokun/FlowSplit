@@ -5,17 +5,9 @@
 
 import React from 'react';
 import { Circle, G, Text as SvgText } from 'react-native-svg';
-import Animated, {
-  useAnimatedProps,
-  useSharedValue,
-  withSpring,
-} from 'react-native-reanimated';
 
 import { DonutConfig, DEFAULT_CONFIG } from './types';
 import { percentageToAngle, getMidpointPercentage, getPointOnCircle } from './useDonutChart';
-import { SpringConfig } from '@/constants/animations';
-
-const AnimatedCircle = Animated.createAnimatedComponent(Circle);
 
 interface DonutSegmentProps {
   startPercentage: number;
@@ -35,7 +27,6 @@ export function DonutSegment({
   showLabel = true,
   isRemainder = false,
 }: DonutSegmentProps) {
-  const strokeWidth = useSharedValue(config.strokeWidth);
   const size = endPercentage - startPercentage;
 
   // Calculate dash array for this segment
@@ -44,11 +35,6 @@ export function DonutSegment({
 
   // Calculate rotation to position segment
   const rotation = percentageToAngle(startPercentage);
-
-  // Animated props for hover effect
-  const animatedProps = useAnimatedProps(() => ({
-    strokeWidth: strokeWidth.value,
-  }));
 
   // Label position at midpoint
   const midPercentage = getMidpointPercentage(startPercentage, endPercentage);
@@ -60,15 +46,15 @@ export function DonutSegment({
   return (
     <G>
       {/* Arc Segment */}
-      <AnimatedCircle
+      <Circle
         cx={config.center}
         cy={config.center}
         r={config.radius}
         fill="transparent"
         stroke={color}
+        strokeWidth={config.strokeWidth}
         strokeDasharray={dashArray}
         transform={`rotate(${rotation} ${config.center} ${config.center})`}
-        animatedProps={animatedProps}
       />
 
       {/* Percentage Label */}

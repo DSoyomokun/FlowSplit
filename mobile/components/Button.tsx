@@ -11,6 +11,7 @@ import {
   ViewStyle,
   TextStyle,
   ActivityIndicator,
+  Platform,
 } from 'react-native';
 import Animated, {
   useAnimatedStyle,
@@ -75,7 +76,7 @@ export function Button({
 
   const handlePress = () => {
     if (disabled || loading) return;
-    if (haptic) {
+    if (haptic && Platform.OS !== 'web') {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
     onPress?.();

@@ -168,7 +168,8 @@ export default function DepositSetupScreen() {
           onPress={handleContinue}
           disabled={!canContinue}
           loading={isLoading}
-          rightIcon={<Ionicons name="arrow-forward" size={18} color="white" />}
+          icon={<Ionicons name="arrow-forward" size={18} color="white" />}
+          iconPosition="right"
         >
           Continue to Split
         </Button>

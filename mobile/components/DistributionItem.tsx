@@ -61,7 +61,7 @@ export function DistributionItem({
       {error && (
         <View style={styles.errorSection}>
           <View style={styles.errorHeader}>
-            <Ionicons name="alert-triangle" size={16} color={Colors.error.bgSolid} />
+            <Ionicons name="warning" size={16} color={Colors.error.bgSolid} />
             <Text style={styles.errorTitle}>{error.title}</Text>
           </View>
           <Text style={styles.errorDescription}>{error.description}</Text>

@@ -9,9 +9,10 @@ import { useCallback, useEffect } from 'react';
 import { useUserStore } from '@/stores';
 import { useAuth } from '@/contexts/AuthContext';
 import * as api from '@/services/api';
+import type { User } from '@/types';
 
 interface UseUserReturn {
-  user: ReturnType<typeof useUserStore>['user'];
+  user: User | null;
   isLoading: boolean;
   error: string | null;
   isAuthenticated: boolean;

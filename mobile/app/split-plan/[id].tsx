@@ -38,7 +38,7 @@ export default function SplitPlanScreen() {
       setPreview(previewData);
     } catch (error) {
       Alert.alert('Error', 'Failed to load split plan');
-      router.back();
+      router.replace('/(tabs)');
     } finally {
       setIsLoading(false);
     }
@@ -60,7 +60,7 @@ export default function SplitPlanScreen() {
       });
       await api.approveSplitPlan(plan.id);
       Alert.alert('Success', 'Split plan approved!', [
-        { text: 'OK', onPress: () => router.back() },
+        { text: 'OK', onPress: () => router.replace('/(tabs)') },
       ]);
     } catch (error) {
       Alert.alert('Error', error instanceof Error ? error.message : 'Failed to approve');
@@ -134,7 +134,7 @@ export default function SplitPlanScreen() {
       <View style={styles.footer}>
         <Pressable
           style={styles.cancelButton}
-          onPress={() => router.back()}
+          onPress={() => router.replace('/(tabs)')}
           disabled={isSubmitting}
         >
           <Text style={styles.cancelButtonText}>Cancel</Text>

@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="view-transition" content="same-origin">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://code.iconify.design/iconify-icon/1.0.7/iconify-icon.min.js"></script>
+  <link rel="prefetch" href="https://p.superdesign.dev/draft/b92e5b63-41fc-4fe3-9b06-6ad7905f3d06" as="document">
+  <link rel="prefetch" href="https://p.superdesign.dev/draft/14957248-c82c-4b1c-912f-662210d8c6e7" as="document">
+  <link rel="prefetch" href="https://p.superdesign.dev/draft/7e7b49b5-8406-4512-9a10-b1bc6ae83ec8" as="document">
+  <link rel="prefetch" href="https://p.superdesign.dev/draft/9edf1601-6e97-448b-a354-07a7173f694d" as="document">
+  <link rel="prefetch" href="https://p.superdesign.dev/draft/a0993423-dcff-44a1-844c-b807a4158cc3" as="document">
+  <link rel="prefetch" href="https://p.superdesign.dev/draft/5fb4c3e5-74d6-409b-aab3-cc5454a4d41d" as="document">
+  <style>
+    @import url('https://api.fontshare.com/v2/css?f[]=satoshi@900,700,500,400&display=swap');
+    
+    html {
+      background-color: #F8F8F8;
+    }
+
+    body {
+      font-family: 'Satoshi', sans-serif;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+
+    .custom-shadow {
+      box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.05);
+    }
+
+    .teal-accent { color: #0EA5A5; }
+    .bg-teal-accent { background-color: #0EA5A5; }
+    .border-subtle { border: 1px solid rgba(0, 0, 0, 0.04); }
+
+    @view-transition { navigation: auto; }
+    
+    ::view-transition-old(main-header),
+    ::view-transition-new(main-header) {
+      animation: none;
+      mix-blend-mode: normal;
+    }
+
+    ::view-transition-old(main-content) {
+      animation: 0.25s ease-out both fade-out;
+    }
+    ::view-transition-new(main-content) {
+      animation: 0.25s ease-in 0.1s both fade-in;
+    }
+
+    @keyframes fade-out { from { opacity: 1; } to { opacity: 0; } }
+    @keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
+
+    ::view-transition-old(root), ::view-transition-new(root) {
+      animation: none;
+      mix-blend-mode: normal;
+    }
+  </style>
+</head>
+<body>
+  <div class="w-full min-h-screen flex flex-col bg-[#F8F8F8]">
+    <!-- Header: Persistent Element -->
+    <header style="view-transition-name: main-header" class="w-full h-[64px] px-6 flex items-center justify-between bg-white border-b border-gray-100 sticky top-0 z-50">
+      <div class="w-8"></div>
+      <h1 class="text-[18px] font-bold tracking-tight text-gray-900">FlowSplit</h1>
+      <button id="nav-menu-btn" class="w-8 h-8 flex items-center justify-end text-gray-600">
+        <iconify-icon icon="lucide:menu" class="text-2xl"></iconify-icon>
+      </button>
+    </header>
+
+    <!-- Main Content Area: Dynamic -->
+    <main style="view-transition-name: main-content" class="flex-1 flex flex-col items-center px-6 pt-12 pb-[34px]">
+      
+      <!-- Success Animation / Icon -->
+      <div class="w-24 h-24 bg-teal-50 rounded-full flex items-center justify-center mb-8">
+        <div class="w-16 h-16 bg-teal-accent rounded-full flex items-center justify-center shadow-lg shadow-teal-500/20">
+          <iconify-icon icon="lucide:check" class="text-white text-4xl"></iconify-icon>
+        </div>
+      </div>
+
+      <!-- Message -->
+      <div class="text-center mb-10">
+        <h2 class="text-2xl font-black text-gray-900 mb-2">Split Complete</h2>
+        <p class="text-gray-500 font-medium px-4">Your deposit of $1,200.00 has been allocated according to your plan.</p>
+      </div>
+
+      <!-- Transaction Summary -->
+      <div class="w-full bg-white rounded-[32px] p-6 border-subtle custom-shadow space-y-4 mb-8">
+        <h3 class="text-xs font-black uppercase tracking-[0.1em] text-gray-400 mb-4 px-1">Allocation Summary</h3>
+        
+        <div class="flex items-center justify-between p-3 rounded-2xl bg-gray-50/50">
+          <div class="flex items-center gap-3">
+            <div class="w-2 h-2 rounded-full bg-[#0EA5A5]"></div>
+            <span class="text-sm font-bold text-gray-700">Tithe</span>
+          </div>
+          <span class="text-sm font-black text-gray-900">$120.00</span>
+        </div>
+
+        <div class="flex items-center justify-between p-3 rounded-2xl bg-gray-50/50">
+          <div class="flex items-center gap-3">
+            <div class="w-2 h-2 rounded-full bg-[#3B82F6]"></div>
+            <span class="text-sm font-bold text-gray-700">Savings</span>
+          </div>
+          <span class="text-sm font-black text-gray-900">$180.00</span>
+        </div>
+
+        <div class="flex items-center justify-between p-3 rounded-2xl bg-gray-50/50">
+          <div class="flex items-center gap-3">
+            <div class="w-2 h-2 rounded-full bg-[#10B981]"></div>
+            <span class="text-sm font-bold text-gray-700">Investing</span>
+          </div>
+          <span class="text-sm font-black text-gray-900">$120.00</span>
+        </div>
+
+        <div class="pt-2 border-t border-gray-100 flex items-center justify-between px-3">
+          <span class="text-sm font-bold text-gray-400">Remaining in Checking</span>
+          <span class="text-sm font-black text-teal-accent">$780.00</span>
+        </div>
+      </div>
+
+      <!-- Secondary Action -->
+      <a href="https://p.superdesign.dev/draft/9edf1601-6e97-448b-a354-07a7173f694d" id="manage-buckets-link" class="w-full text-center py-4 text-gray-400 font-bold hover:text-gray-600 transition-colors">
+        Manage Buckets
+      </a>
+
+      <!-- Footer Spacer for Safety -->
+      <div class="flex-1"></div>
+
+      <!-- Final Action Button -->
+      <div class="w-full pt-6">
+        <a href="#dashboard" id="finish-flow-btn" class="block w-full bg-teal-accent hover:bg-[#0C8F8F] text-white text-center font-bold py-4 rounded-2xl transition-all active:scale-[0.98] custom-shadow">
+          Return to Dashboard
+        </a>
+      </div>
+    </main>
+  </div>
+</body>
+</html>

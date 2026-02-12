@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="view-transition" content="same-origin">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://code.iconify.design/iconify-icon/1.0.7/iconify-icon.min.js"></script>
+  <link rel="prefetch" href="https://p.superdesign.dev/draft/b92e5b63-41fc-4fe3-9b06-6ad7905f3d06" as="document">
+  <link rel="prefetch" href="https://p.superdesign.dev/draft/14957248-c82c-4b1c-912f-662210d8c6e7" as="document">
+  <link rel="prefetch" href="https://p.superdesign.dev/draft/7e7b49b5-8406-4512-9a10-b1bc6ae83ec8" as="document">
+  <link rel="prefetch" href="https://p.superdesign.dev/draft/9edf1601-6e97-448b-a354-07a7173f694d" as="document">
+  <link rel="prefetch" href="https://p.superdesign.dev/draft/a0993423-dcff-44a1-844c-b807a4158cc3" as="document">
+  <link rel="prefetch" href="https://p.superdesign.dev/draft/5fb4c3e5-74d6-409b-aab3-cc5454a4d41d" as="document">
+  <style>
+    @import url('https://api.fontshare.com/v2/css?f[]=satoshi@900,700,500,400&display=swap');
+    
+    body {
+      font-family: 'Satoshi', sans-serif;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+
+    .teal-accent { color: #0EA5A5; }
+    .bg-teal-accent { background-color: #0EA5A5; }
+    .border-subtle { border: 1px solid rgba(0, 0, 0, 0.04); }
+
+    html {
+        background-color: #F8F8F8;
+    }
+    @view-transition {
+        navigation: auto;
+    }
+    ::view-transition-old(main-nav),
+    ::view-transition-new(main-nav) {
+        animation: none;
+        mix-blend-mode: normal;
+    }
+    ::view-transition-old(main-content) {
+        animation: 0.25s ease-out both fade-out;
+    }
+    ::view-transition-new(main-content) {
+        animation: 0.25s ease-in 0.1s both fade-in;
+    }
+    @keyframes fade-out { from { opacity: 1; } to { opacity: 0; } }
+    @keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
+
+    .input-cursor-blink::after {
+      content: '|';
+      animation: blink 1s step-start infinite;
+      color: #0EA5A5;
+      margin-left: 2px;
+    }
+    @keyframes blink {
+      50% { opacity: 0; }
+    }
+  </style>
+</head>
+<body>
+  <div class="min-h-screen bg-[#F8F8F8] flex flex-col items-center">
+    <!-- Header (Persistent) -->
+    <header class="w-full max-w-[375px] h-[64px] px-6 flex items-center justify-between bg-white border-b border-gray-100 sticky top-0 z-50" style="view-transition-name: main-nav">
+      <div class="w-8"></div>
+      <h1 class="text-[18px] font-bold tracking-tight text-gray-900">FlowSplit</h1>
+      <button id="nav-menu-btn" class="w-8 h-8 flex items-center justify-end text-gray-600">
+        <iconify-icon icon="lucide:menu" class="text-2xl"></iconify-icon>
+      </button>
+    </header>
+
+    <!-- Dynamic Content Area -->
+    <main class="w-full max-w-[375px] flex-1 flex flex-col p-6" style="view-transition-name: main-content">
+      
+      <!-- Back navigation -->
+      <div class="flex items-center gap-2 text-gray-400 mb-6">
+        <iconify-icon icon="lucide:arrow-left" class="text-lg"></iconify-icon>
+        <span class="text-xs font-bold uppercase tracking-wider">New Split</span>
+      </div>
+
+      <!-- Error Banner -->
+      <div class="bg-red-50 border border-red-100 p-4 rounded-2xl flex items-start gap-3 mb-8">
+        <iconify-icon icon="lucide:alert-circle" class="text-red-500 text-xl mt-0.5"></iconify-icon>
+        <div>
+          <p class="text-sm font-bold text-red-900 leading-tight">No connected bank accounts found</p>
+          <p class="text-xs text-red-700 mt-1">Please link your bank first to set up your deposit split.</p>
+        </div>
+      </div>
+
+      <!-- Disabled Form Content -->
+      <div class="space-y-8 opacity-40 grayscale pointer-events-none select-none">
+        <!-- Amount Entry Section -->
+        <section class="text-center space-y-4 pt-4">
+          <label class="text-sm font-bold text-gray-400 uppercase tracking-widest">Deposit Amount</label>
+          <div class="flex items-baseline justify-center">
+            <span class="text-3xl font-black text-gray-300 mr-2">$</span>
+            <div class="text-6xl font-black text-gray-900">0</div>
+          </div>
+          <p class="text-xs text-gray-400 font-medium">What's arriving in your account today?</p>
+        </section>
+
+        <!-- Account Selection Section -->
+        <section class="space-y-4">
+          <h3 class="text-[11px] font-black text-gray-400 uppercase tracking-[0.15em]">Source Account</h3>
+          
+          <div class="space-y-3">
+            <div class="w-full bg-white p-5 rounded-[24px] border-subtle flex items-center justify-center border-dashed border-2 border-gray-200">
+              <p class="text-xs font-bold text-gray-400 uppercase">No accounts available</p>
+            </div>
+          </div>
+        </section>
+      </div>
+
+      <!-- Spacer to push button down -->
+      <div class="flex-1"></div>
+
+      <!-- Fixed Bottom Actions (Content specific button) -->
+      <div class="w-full space-y-4">
+        <a href="https://p.superdesign.dev/draft/7e7b49b5-8406-4512-9a10-b1bc6ae83ec8" id="next-allocation-btn" class="w-full bg-teal-accent hover:bg-[#0C8F8F] text-white font-bold py-5 rounded-[24px] transition-all active:scale-[0.98] shadow-[0_10px_20px_-5px_rgba(14,165,165,0.4)] flex items-center justify-center gap-2">
+          Link Bank Account
+          <iconify-icon icon="lucide:link" class="text-lg"></iconify-icon>
+        </a>
+        <p class="text-center text-[10px] text-gray-400 font-medium px-8">
+          Need help? <a href="#" id="bank-support-link" class="text-teal-accent font-bold hover:underline">View connection troubleshooting</a>
+        </p>
+      </div>
+
+    </main>
+  </div>
+</body>
+</html>

@@ -37,9 +37,9 @@ export function navigateToSplitStep(depositId: string, step: SplitFlowStep): voi
 
   // Use replace for complete to prevent going back
   if (step === 'complete') {
-    router.replace(route);
+    router.replace(route as any);
   } else {
-    router.push(route);
+    router.push(route as any);
   }
 }
 

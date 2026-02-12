@@ -92,26 +92,26 @@ function getVariantStyles(variant: CardVariant): ViewStyle {
     case 'large':
       return {
         ...baseStyle,
-        borderRadius: BorderRadius.card, // 32px
+        borderRadius: BorderRadius.card, // 32px - main cards
         borderWidth: 1,
         borderColor: Colors.border.subtle,
       };
     case 'default':
       return {
         ...baseStyle,
-        borderRadius: BorderRadius.xl, // 16px
+        borderRadius: BorderRadius.cardSmall, // 16px - smaller cards
         borderWidth: 1,
         borderColor: Colors.border.subtle,
       };
     case 'muted':
       return {
         backgroundColor: Colors.cardMuted,
-        borderRadius: BorderRadius.xl,
+        borderRadius: BorderRadius.cardSmall,
       };
     case 'outline':
       return {
         backgroundColor: 'transparent',
-        borderRadius: BorderRadius.xl,
+        borderRadius: BorderRadius.cardSmall,
         borderWidth: 1,
         borderColor: Colors.border.default,
       };
@@ -155,25 +155,6 @@ interface CardSectionProps {
   borderBottom?: boolean;
 }
 
-export function CardSection({
-  children,
-  style,
-  borderTop = false,
-  borderBottom = false,
-}: CardSectionProps) {
-  return (
-    <View
-      style={[
-        borderTop && styles.borderTop,
-        borderBottom && styles.borderBottom,
-        style,
-      ]}
-    >
-      {children}
-    </View>
-  );
-}
-
 const sectionStyles = StyleSheet.create({
   borderTop: {
     borderTopWidth: 1,
@@ -189,4 +170,21 @@ const sectionStyles = StyleSheet.create({
   },
 });
 
-Object.assign(styles, sectionStyles);
+export function CardSection({
+  children,
+  style,
+  borderTop = false,
+  borderBottom = false,
+}: CardSectionProps) {
+  return (
+    <View
+      style={[
+        borderTop && sectionStyles.borderTop,
+        borderBottom && sectionStyles.borderBottom,
+        style,
+      ]}
+    >
+      {children}
+    </View>
+  );
+}

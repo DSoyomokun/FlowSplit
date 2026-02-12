@@ -4,7 +4,7 @@
  */
 
 import React from 'react';
-import { Text, StyleSheet, Pressable, ViewStyle } from 'react-native';
+import { Text, StyleSheet, Pressable, ViewStyle, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import Animated, {
   useAnimatedStyle,
@@ -74,7 +74,9 @@ export function AddBucketButton({
   };
 
   const handlePress = () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    if (Platform.OS !== 'web') {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    }
     onPress();
   };
 

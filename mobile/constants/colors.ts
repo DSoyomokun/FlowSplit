@@ -1,6 +1,6 @@
 /**
  * FlowSplit Color System
- * Based on design exports from SuperDesign
+ * Based on design spec from SuperDesign
  */
 
 export const Colors = {
@@ -13,15 +13,15 @@ export const Colors = {
   // Background
   background: '#F8F8F8',
   card: '#FFFFFF',
-  cardMuted: 'rgba(249, 250, 251, 0.5)', // gray-50/50
+  cardMuted: 'rgba(249, 250, 251, 0.5)',
 
-  // Text
+  // Text (from design spec)
   text: {
-    primary: '#111827',   // gray-900
-    secondary: '#374151', // gray-700
-    muted: '#9CA3AF',     // gray-400
-    light: '#D1D5DB',     // gray-300
-    disabled: '#6B7280',  // gray-500
+    primary: '#1F2937',   // Dark Gray - Headings and primary text
+    secondary: '#6B7280', // Gray - Body text and descriptions
+    muted: '#9CA3AF',     // Light Gray - Secondary labels and metadata
+    light: '#D1D5DB',     // Lighter gray
+    disabled: '#6B7280',  // Same as secondary
   },
 
   // Bucket Colors
@@ -37,41 +37,41 @@ export const Colors = {
 
   // State Colors - Success
   success: {
-    bg: 'rgba(16, 185, 129, 0.1)',   // green-500/10
+    bg: 'rgba(16, 185, 129, 0.1)',
     bgSolid: '#10B981',
-    text: '#059669',                  // green-600
+    text: '#16A34A',      // Green-600
     border: 'rgba(16, 185, 129, 0.2)',
   },
 
   // State Colors - Warning/Pending
   warning: {
-    bg: '#FFFBEB',                    // amber-50
-    bgSolid: '#F59E0B',               // amber-500
-    text: '#D97706',                  // amber-600
-    textDark: '#92400E',              // amber-800
-    border: '#FDE68A',                // amber-200
+    bg: '#FFFBEB',
+    bgSolid: '#F59E0B',
+    text: '#D97706',      // Amber-600
+    textDark: '#92400E',
+    border: '#FDE68A',
     borderLight: 'rgba(251, 191, 36, 0.5)',
   },
 
   // State Colors - Error
   error: {
-    bg: '#FEF2F2',                    // red-50
-    bgSolid: '#EF4444',               // red-500
-    text: '#DC2626',                  // red-600
-    textDark: '#B91C1C',              // red-700
-    border: '#FECACA',                // red-200
+    bg: '#FEF2F2',
+    bgSolid: '#EF4444',
+    text: '#DC2626',      // Red-600
+    textDark: '#B91C1C',
+    border: '#FECACA',
     borderLight: 'rgba(239, 68, 68, 0.2)',
   },
 
-  // Borders
+  // Borders (from design spec)
   border: {
-    subtle: 'rgba(0, 0, 0, 0.04)',
-    light: '#F3F4F6',                 // gray-100
-    default: '#E5E7EB',               // gray-200
-    dashed: '#D1D5DB',                // gray-300
+    subtle: 'rgba(0, 0, 0, 0.04)',  // Main border color
+    light: '#F3F4F6',
+    default: '#E2E8F0',
+    dashed: '#D1D5DB',
   },
 
-  // Gray Scale (for reference)
+  // Gray Scale
   gray: {
     50: '#F9FAFB',
     100: '#F3F4F6',
@@ -83,6 +83,14 @@ export const Colors = {
     700: '#374151',
     800: '#1F2937',
     900: '#111827',
+  },
+
+  // Teal scale (for donut chart, etc.)
+  teal: {
+    50: '#E0F2F1',
+    100: '#B2DFDB',
+    500: '#0EA5A5',
+    600: '#0C8F8F',
   },
 
   // Overlay

@@ -6,6 +6,7 @@
  */
 
 import { useCallback, useState } from 'react';
+import { Platform } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { useBucketsStore } from '@/stores';
 import * as api from '@/services/api';
@@ -64,17 +65,23 @@ export function useBucketMutations(): UseBucketMutationsReturn {
       try {
         setIsCreating(true);
         setError(null);
-        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+        if (Platform.OS !== 'web') {
+          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+        }
 
         const bucket = await api.createBucket(data);
         store.addBucket(bucket);
 
-        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        if (Platform.OS !== 'web') {
+          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        }
         return bucket;
       } catch (err) {
         const message = err instanceof Error ? err.message : 'Failed to create bucket';
         setError(message);
-        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+        if (Platform.OS !== 'web') {
+          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+        }
         return null;
       } finally {
         setIsCreating(false);
@@ -88,17 +95,23 @@ export function useBucketMutations(): UseBucketMutationsReturn {
       try {
         setIsUpdating(true);
         setError(null);
-        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        if (Platform.OS !== 'web') {
+          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        }
 
         const bucket = await api.updateBucket(id, data);
         store.updateBucket(id, bucket);
 
-        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        if (Platform.OS !== 'web') {
+          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        }
         return bucket;
       } catch (err) {
         const message = err instanceof Error ? err.message : 'Failed to update bucket';
         setError(message);
-        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+        if (Platform.OS !== 'web') {
+          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+        }
         return null;
       } finally {
         setIsUpdating(false);
@@ -112,17 +125,23 @@ export function useBucketMutations(): UseBucketMutationsReturn {
       try {
         setIsDeleting(true);
         setError(null);
-        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+        if (Platform.OS !== 'web') {
+          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+        }
 
         await api.deleteBucket(id);
         store.removeBucket(id);
 
-        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        if (Platform.OS !== 'web') {
+          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        }
         return true;
       } catch (err) {
         const message = err instanceof Error ? err.message : 'Failed to delete bucket';
         setError(message);
-        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+        if (Platform.OS !== 'web') {
+          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+        }
         return false;
       } finally {
         setIsDeleting(false);
