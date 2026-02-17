@@ -1,5 +1,5 @@
 import { supabase } from './supabase';
-import type { Bucket, Deposit, SplitPlan, SplitPlanPreview, User } from '@/types';
+import type { Bucket, Deposit, SplitPlan, SplitPlanPreview, SplitExecutionResponse, User } from '@/types';
 
 const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:8000/api/v1';
 
@@ -135,8 +135,24 @@ export async function getSplitPlan(id: string): Promise<SplitPlan> {
   return request<SplitPlan>(`/split-plans/${id}`);
 }
 
+export async function getSplitPlanByDeposit(depositId: string): Promise<SplitPlan> {
+  return request<SplitPlan>(`/split-plans/by-deposit/${depositId}`);
+}
+
 export async function approveSplitPlan(id: string): Promise<SplitPlan> {
   return request<SplitPlan>(`/split-plans/${id}/approve`, {
+    method: 'POST',
+  });
+}
+
+export async function executeSplitPlan(id: string): Promise<SplitExecutionResponse> {
+  return request<SplitExecutionResponse>(`/split-plans/${id}/execute`, {
+    method: 'POST',
+  });
+}
+
+export async function retrySplitPlan(id: string): Promise<SplitExecutionResponse> {
+  return request<SplitExecutionResponse>(`/split-plans/${id}/retry`, {
     method: 'POST',
   });
 }

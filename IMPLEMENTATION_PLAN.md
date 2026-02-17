@@ -1045,109 +1045,113 @@ All screens need to handle multiple states. Below are specifications extracted f
 ## File Checklist
 
 ### Constants
-- [ ] `constants/theme.ts` - Colors, typography, spacing, shadows
-- [ ] `constants/index.ts` - Exports
+- [x] `constants/colors.ts` - Colors (split from theme.ts)
+- [x] `constants/typography.ts` - Font families, sizes, letter spacing
+- [x] `constants/spacing.ts` - Spacing, border radius, sizes
+- [x] `constants/shadows.ts` - Shadow definitions
+- [x] `constants/animations.ts` - Shimmer/pulse animations
+- [x] `constants/index.ts` - Exports
 
 ### Components
-- [ ] `components/Button.tsx`
-- [ ] `components/Card.tsx`
-- [ ] `components/Header.tsx`
-- [ ] `components/BottomActionBar.tsx`
-- [ ] `components/AmountInput.tsx`
-- [ ] `components/AccountSelector.tsx`
-- [ ] `components/BucketCard.tsx`
-- [ ] `components/BucketConfigCard.tsx`
-- [ ] `components/DistributionItem.tsx`
-- [ ] `components/DonutChart/index.tsx`
-- [ ] `components/SuccessIcon.tsx`
+- [x] `components/Button.tsx`
+- [x] `components/Card.tsx`
+- [x] `components/Header.tsx`
+- [x] `components/BottomActionBar.tsx`
+- [x] `components/AmountInput.tsx`
+- [x] `components/AmountDisplay.tsx`
+- [x] `components/AccountSelector.tsx`
+- [x] `components/AccountCard.tsx`
+- [x] `components/BucketCard.tsx`
+- [x] `components/BucketConfigCard.tsx`
+- [x] `components/DistributionItem.tsx`
+- [x] `components/DonutChart/index.tsx`
+- [x] `components/DonutChart/DonutSegment.tsx`
+- [x] `components/DonutChart/DonutHandle.tsx`
+- [x] `components/DonutChart/useDonutChart.ts`
+- [x] `components/DonutChart/types.ts`
+- [x] `components/FloatingActionButton.tsx`
+- [x] `components/AddDepositModal.tsx`
+- [x] `components/AddBucketButton.tsx`
+- [x] `components/RemainderCard.tsx`
+- [x] `components/SectionLabel.tsx`
+- [x] `components/StatusIcons.tsx`
+- [x] `components/TabBar.tsx`
+- [ ] `components/SuccessIcon.tsx` - Using Ionicons checkmark instead
 
 ### State Components
-- [ ] `components/Skeleton.tsx`
-- [ ] `components/ErrorBanner.tsx`
-- [ ] `components/StatusBadge.tsx`
-- [ ] `components/ErrorModal.tsx`
-- [ ] `components/EmptyState.tsx`
-- [ ] `components/ActionCard.tsx` (for manual action prompts)
+- [x] `components/Skeleton.tsx`
+- [x] `components/ErrorBanner.tsx`
+- [x] `components/StatusBadge.tsx`
+- [x] `components/ErrorModal.tsx`
+- [x] `components/EmptyState.tsx`
+- [x] `components/ActionCard.tsx` (for manual action prompts)
 
 ### Screens
-- [ ] `app/deposit/setup.tsx`
-- [ ] `app/deposit/[id]/allocate.tsx`
-- [ ] `app/deposit/[id]/confirm.tsx`
-- [ ] `app/deposit/[id]/complete.tsx`
-- [ ] `app/buckets/configure.tsx`
+- [x] `app/(tabs)/index.tsx` - Dashboard with FAB + pending splits
+- [x] `app/(tabs)/buckets.tsx` - Buckets tab
+- [x] `app/(tabs)/history.tsx` - Split history/ledger
+- [x] `app/(tabs)/settings.tsx` - Settings
+- [x] `app/(auth)/login.tsx` - Login
+- [x] `app/(auth)/register.tsx` - Register
+- [x] `app/deposit/setup.tsx` - Deposit setup
+- [x] `app/deposit/[id]/allocate.tsx` - Donut splitter
+- [x] `app/deposit/[id]/confirm.tsx` - Confirmation
+- [x] `app/deposit/[id]/complete.tsx` - Success
+- [x] `app/deposit/[id]/processing.tsx` - Processing/retry
+- [x] `app/buckets/configure.tsx` - Bucket configuration
+- [x] `app/split-plan/[id].tsx` - Split plan detail
 
 ### Hooks
-- [ ] `hooks/useDonutChart.ts`
-- [ ] `hooks/useSplitFlow.ts`
-- [ ] `hooks/useAllocation.ts`
+- [x] `hooks/useBuckets.ts`
+- [x] `hooks/useBucketMutations.ts`
+- [x] `hooks/useDeposit.ts`
+- [x] `hooks/useDeposits.ts`
+- [x] `hooks/useDepositMutations.ts`
+- [x] `hooks/useSplitPlan.ts`
+- [x] `hooks/useSplitFlow.ts`
+- [x] `hooks/useSplitExecution.ts`
+- [x] `hooks/useUser.ts`
+- [x] `hooks/index.ts`
 
 ---
 
-## Ready to Implement
+## Implementation Status
 
-All **21 design pages** have been fully analyzed and documented:
+### Phase 1: Design Tokens & Theme - COMPLETE
+- [x] Colors, typography, spacing, shadows, animations constants
 
-### Happy Path Screens (6)
-1. Deposit Setup
-2. Split Allocation (Interactive Donut)
-3. Direct Interaction Donut (Variant)
-4. Bucket Configuration
-5. Confirmation
-6. Split Complete
+### Phase 2: Base Components - COMPLETE
+- [x] Button, Card, Header, BottomActionBar, SectionLabel, TabBar
 
-### State Variants (11)
-**Loading States:**
-- Split Allocation - Loading
-- Bucket Configuration - Loading
-- Confirmation - Loading
+### Phase 3: State Components - COMPLETE
+- [x] Skeleton, ErrorBanner, StatusBadge, ErrorModal, EmptyState, ActionCard
 
-**Empty States:**
-- Bucket Configuration - Empty
+### Phase 4: Feature Components - COMPLETE
+- [x] DonutChart (with segments, handles, drag gesture)
+- [x] AmountInput, AmountDisplay, AccountSelector
+- [x] BucketCard, BucketConfigCard, DistributionItem
+- [x] FloatingActionButton, AddDepositModal, RemainderCard
 
-**Error States:**
-- Bucket Configuration - Error (connection issue)
-- Confirmation - Error (account unavailable)
-- Confirmation - Network Error (modal overlay)
-- Deposit Setup - Validation Error
+### Phase 5: Screens (Happy Path) - COMPLETE
+- [x] Dashboard, Deposit Setup, Split Allocation, Confirmation, Complete, Processing
+- [x] Bucket Configuration, Split History, Auth screens
 
-**Partial/Mixed States:**
-- Split Complete - Partial Success
-- Split Complete - Pending Manual Action
-- Split Processing - Retry State
+### Phase 6: State Integration - COMPLETE
+- [x] Loading states (Skeleton component exists)
+- [x] Error states (ErrorBanner, ErrorModal exist)
+- [x] Empty states (EmptyState component exists)
+- [x] Wire loading/error/empty states into all screens
+- [x] Partial success variant on complete screen
+- [x] Manual action variant on complete screen
+- [x] Retry animation on processing screen
 
-### Design System Complete
-- Exact color values (including error/warning amber/red)
-- Typography specs (Satoshi font)
-- Spacing and border radius values
-- Component specifications
-- Screen layouts
-- Navigation flow
-- Animation specs (including shimmer, spin, pulse)
-- State component patterns (Skeleton, ErrorBanner, StatusBadge, ErrorModal)
+### Outstanding Issues
+- [x] DonutChart drag handles crash on interaction - FIXED
+- [x] DonutChart circular rendering - FIXED
+- [x] Backend business logic (allocation service, split execution, notifications)
+- [ ] Backend API integration (screens use mock data for fallback)
+- [ ] Split history screen needs real data
 
 ---
 
-## Implementation Phases (Updated)
-
-### Phase 1: Design Tokens & Theme
-- `constants/theme.ts` with all colors including state colors
-- `constants/animations.ts` for shimmer/pulse animations
-
-### Phase 2: Base Components
-- Button, Card, Header, BottomActionBar
-
-### Phase 3: State Components
-- Skeleton, ErrorBanner, StatusBadge, ErrorModal, EmptyState
-
-### Phase 4: Feature Components
-- DonutChart, AmountInput, BucketCard, etc.
-
-### Phase 5: Screens (Happy Path)
-- All 6 main screens with basic functionality
-
-### Phase 6: State Integration
-- Add loading, error, empty, and partial states to all screens
-
----
-
-**Next step:** Which phase would you like to start with?
+**Next step:** Wire state variants into screens, then backend API integration.

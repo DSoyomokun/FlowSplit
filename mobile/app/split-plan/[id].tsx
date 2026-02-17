@@ -53,17 +53,37 @@ export default function SplitPlanScreen() {
 
     try {
       setIsSubmitting(true);
+      // Create the plan (idempotent — returns existing if one exists)
       const plan = await api.createSplitPlan({
         deposit_id: deposit.id,
         total_amount: preview.total_amount,
         actions: preview.actions,
       });
-      await api.approveSplitPlan(plan.id);
-      Alert.alert('Success', 'Split plan approved!', [
-        { text: 'OK', onPress: () => router.replace('/(tabs)') },
-      ]);
+
+      // If already completed, go straight to complete
+      if (plan.status === 'completed') {
+        router.replace(`/deposit/${deposit.id}/complete`);
+        return;
+      }
+
+      // If already executing (partial failure), go to processing
+      if (plan.status === 'executing') {
+        router.replace(`/deposit/${deposit.id}/processing`);
+        return;
+      }
+
+      // Execute the plan (auto-approves if still draft)
+      const result = await api.executeSplitPlan(plan.id);
+      const allDone = result.action_results.every(
+        (a) => a.status === 'completed' || a.status === 'manual_required'
+      );
+      if (allDone) {
+        router.replace(`/deposit/${deposit.id}/complete`);
+      } else {
+        router.replace(`/deposit/${deposit.id}/processing`);
+      }
     } catch (error) {
-      Alert.alert('Error', error instanceof Error ? error.message : 'Failed to approve');
+      Alert.alert('Error', error instanceof Error ? error.message : 'Failed to execute split');
     } finally {
       setIsSubmitting(false);
     }
@@ -146,7 +166,7 @@ export default function SplitPlanScreen() {
         >
           <Ionicons name="checkmark" size={20} color="#fff" />
           <Text style={styles.approveButtonText}>
-            {isSubmitting ? 'Approving...' : 'Approve Split'}
+            {isSubmitting ? 'Processing...' : 'Approve & Split'}
           </Text>
         </Pressable>
       </View>

@@ -67,3 +67,24 @@ export interface SplitPlanPreview {
     amount: number;
   }[];
 }
+
+export interface ActionExecutionResult {
+  action_id: string;
+  bucket_id: string;
+  status: 'pending' | 'processing' | 'completed' | 'failed' | 'manual_required';
+  amount: number;
+  error: string | null;
+  external_url: string | null;
+  transaction_id: string | null;
+}
+
+export interface SplitExecutionResponse {
+  plan_id: string;
+  status: string;
+  total_amount: number;
+  completed_amount: number;
+  failed_amount: number;
+  manual_amount: number;
+  action_results: ActionExecutionResult[];
+  completed_at: string | null;
+}

@@ -69,12 +69,31 @@ async def create_new_split_plan(
 
     existing_plan = await get_split_plan_by_deposit(session, plan_in.deposit_id)
     if existing_plan:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Split plan already exists for this deposit",
-        )
+        # Return the existing plan instead of erroring (idempotent)
+        return SplitPlanResponse.model_validate(existing_plan)
 
     plan = await create_split_plan(session, plan_in)
+    return SplitPlanResponse.model_validate(plan)
+
+
+@router.get("/by-deposit/{deposit_id}", response_model=SplitPlanResponse)
+async def get_split_plan_for_deposit(
+    session: SessionDep,
+    current_user: CurrentUser,
+    deposit_id: str,
+) -> SplitPlanResponse:
+    deposit = await get_deposit(session, deposit_id)
+    if not deposit or deposit.user_id != current_user.id:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Deposit not found"
+        )
+
+    plan = await get_split_plan_by_deposit(session, deposit_id)
+    if not plan:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="No split plan for this deposit"
+        )
+
     return SplitPlanResponse.model_validate(plan)
 
 

@@ -1,7 +1,7 @@
 from datetime import datetime
 from uuid import uuid4
 
-from sqlalchemy import DateTime, ForeignKey, Numeric, String, func
+from sqlalchemy import DateTime, ForeignKey, String, Text, func
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -21,14 +21,19 @@ class BankAccount(Base):
         ForeignKey("users.id", ondelete="CASCADE"),
         index=True,
     )
+    plaid_item_id: Mapped[str | None] = mapped_column(String(255), nullable=True)
     plaid_account_id: Mapped[str | None] = mapped_column(String(255), nullable=True)
-    plaid_access_token: Mapped[str | None] = mapped_column(String(255), nullable=True)
-    institution_name: Mapped[str] = mapped_column(String(255))
-    account_name: Mapped[str] = mapped_column(String(255))
-    account_mask: Mapped[str | None] = mapped_column(String(10), nullable=True)
-    account_type: Mapped[str] = mapped_column(String(50), default="checking")
+    plaid_access_token: Mapped[str | None] = mapped_column(Text, nullable=True)
+    institution_id: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    institution_name: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    name: Mapped[str] = mapped_column(String(255))
+    official_name: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    type: Mapped[str] = mapped_column(String(50))  # depository, credit, etc.
+    subtype: Mapped[str | None] = mapped_column(String(50), nullable=True)  # checking, savings
+    mask: Mapped[str | None] = mapped_column(String(10), nullable=True)  # Last 4 digits
+    cursor: Mapped[str | None] = mapped_column(Text, nullable=True)  # Plaid sync cursor
     is_primary: Mapped[bool] = mapped_column(default=False)
-    balance: Mapped[float] = mapped_column(Numeric(12, 2), default=0)
+    is_active: Mapped[bool] = mapped_column(default=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         server_default=func.now(),

@@ -70,11 +70,16 @@ export function useSplitPlan(
       setIsLoading(true);
       setError(null);
 
-      // Try to get existing plan first
-      // In a real implementation, you'd have an endpoint to get plan by deposit_id
-      // For now, we'll load the preview
-      if (autoPreview) {
-        await loadPreview();
+      // Try to get existing plan by deposit ID
+      try {
+        const existingPlan = await api.getSplitPlanByDeposit(depositId);
+        setPlan(existingPlan);
+      } catch {
+        // No plan exists yet — load preview instead
+        setPlan(null);
+        if (autoPreview) {
+          await loadPreview();
+        }
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load split plan');

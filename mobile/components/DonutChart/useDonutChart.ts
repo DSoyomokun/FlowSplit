@@ -29,6 +29,16 @@ export function useDonutChart({
 }: UseDonutChartProps): UseDonutChartReturn {
   const [segments, setSegments] = useState<DonutSegment[]>(initialSegments);
   const isInitialRender = useRef(true);
+  const prevSegmentIds = useRef(initialSegments.map((s) => s.id).join(','));
+
+  // Sync segments when initialSegments changes (e.g., bucket added/removed)
+  useEffect(() => {
+    const newIds = initialSegments.map((s) => s.id).join(',');
+    if (newIds !== prevSegmentIds.current) {
+      prevSegmentIds.current = newIds;
+      setSegments(initialSegments);
+    }
+  }, [initialSegments]);
 
   // Notify parent after segments change (not during render)
   useEffect(() => {

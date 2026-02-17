@@ -5,7 +5,7 @@
  * Stories: 62, 63, 64
  */
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -23,54 +23,39 @@ import { FontFamily, FontSize } from '@/constants/typography';
 import { BorderRadius, Spacing } from '@/constants/spacing';
 import { Shadows } from '@/constants/shadows';
 import { Header, Card, Button } from '@/components';
+import { useBuckets, useSplitPlan } from '@/hooks';
+import * as api from '@/services/api';
+import type { ActionExecutionResult } from '@/types';
 
-// Mock allocations with processing status
-const MOCK_ALLOCATIONS = [
-  {
-    id: 'tithe',
-    name: 'Tithe',
-    destination: 'Better Together',
-    amount: 120,
-    color: BucketColors[0],
-  },
-  {
-    id: 'savings',
-    name: 'Savings',
-    destination: 'Ally Bank ••0122',
-    amount: 180,
-    color: BucketColors[1],
-  },
-  {
-    id: 'investing',
-    name: 'Investing',
-    destination: 'Vanguard ••8829',
-    amount: 120,
-    color: BucketColors[2],
-  },
-];
-
-type ProcessingStatus = 'pending' | 'processing' | 'complete' | 'error';
-
-interface AllocationStatus {
-  id: string;
-  status: ProcessingStatus;
-  error?: string;
-}
+type ProcessingStatus = 'pending' | 'processing' | 'completed' | 'failed' | 'manual_required';
 
 export default function ProcessingScreen() {
   const router = useRouter();
   const { id: depositId } = useLocalSearchParams<{ id: string }>();
   const insets = useSafeAreaInsets();
 
+  const { buckets } = useBuckets();
+  const { plan } = useSplitPlan(depositId || '');
+
   // Animation values
   const [spinAnim] = useState(new Animated.Value(0));
-  const [progressAnim] = useState(new Animated.Value(0));
 
   // Processing state
-  const [statuses, setStatuses] = useState<AllocationStatus[]>(
-    MOCK_ALLOCATIONS.map((a) => ({ id: a.id, status: 'pending' }))
-  );
+  const [actionResults, setActionResults] = useState<ActionExecutionResult[]>([]);
   const [overallStatus, setOverallStatus] = useState<'processing' | 'complete' | 'partial'>('processing');
+  const [isRetrying, setIsRetrying] = useState(false);
+
+  // Build display data from plan actions + buckets
+  const allocations = (plan?.actions || []).map((action, index) => {
+    const bucket = buckets.find((b) => b.id === action.bucket_id);
+    return {
+      id: action.bucket_id,
+      name: bucket?.name || 'Bucket',
+      destination: bucket?.name || 'Transfer',
+      amount: action.amount,
+      color: bucket?.color || BucketColors[index % BucketColors.length],
+    };
+  });
 
   // Start spinner animation
   useEffect(() => {
@@ -83,78 +68,79 @@ export default function ProcessingScreen() {
       })
     );
     spin.start();
-
     return () => spin.stop();
   }, [spinAnim]);
 
-  // Simulate processing each allocation
+  // Check plan status and poll for updates
   useEffect(() => {
-    const processAllocations = async () => {
-      for (let i = 0; i < MOCK_ALLOCATIONS.length; i++) {
-        const allocation = MOCK_ALLOCATIONS[i];
+    if (!plan) return;
 
-        // Set to processing
-        setStatuses((prev) =>
-          prev.map((s) =>
-            s.id === allocation.id ? { ...s, status: 'processing' } : s
-          )
-        );
-
-        // Simulate processing time
-        await new Promise((resolve) => setTimeout(resolve, 800 + Math.random() * 400));
-
-        // Randomly fail one allocation for demo (10% chance)
-        const shouldFail = Math.random() < 0.1;
-
-        // Set to complete or error
-        setStatuses((prev) =>
-          prev.map((s) =>
-            s.id === allocation.id
-              ? {
-                  ...s,
-                  status: shouldFail ? 'error' : 'complete',
-                  error: shouldFail ? 'Connection timeout' : undefined,
-                }
-              : s
-          )
-        );
-
-        if (!shouldFail) {
-          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-        } else {
-          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
-        }
-
-        // Animate progress
-        Animated.timing(progressAnim, {
-          toValue: (i + 1) / MOCK_ALLOCATIONS.length,
-          duration: 300,
-          useNativeDriver: false,
-        }).start();
-      }
-    };
-
-    processAllocations();
-  }, [progressAnim]);
-
-  // Check completion status
-  useEffect(() => {
-    const allComplete = statuses.every((s) => s.status === 'complete' || s.status === 'error');
-
-    if (allComplete) {
-      const hasErrors = statuses.some((s) => s.status === 'error');
-
-      if (hasErrors) {
-        setOverallStatus('partial');
-      } else {
+    const checkStatus = () => {
+      if (plan.status === 'completed') {
         setOverallStatus('complete');
-        // Navigate to complete screen after a brief delay
         setTimeout(() => {
           router.replace(`/deposit/${depositId}/complete`);
-        }, 1000);
+        }, 800);
+        return true; // done polling
       }
-    }
-  }, [statuses, depositId, router]);
+
+      if (plan.status === 'executing') {
+        const results: ActionExecutionResult[] = plan.actions.map((a) => ({
+          action_id: a.id,
+          bucket_id: a.bucket_id,
+          status: a.executed ? 'completed' : 'pending',
+          amount: a.amount,
+          error: null,
+          external_url: null,
+          transaction_id: null,
+        }));
+        setActionResults(results);
+
+        const allDone = results.every((r) => r.status === 'completed');
+        if (allDone) {
+          setOverallStatus('complete');
+          setTimeout(() => {
+            router.replace(`/deposit/${depositId}/complete`);
+          }, 800);
+          return true; // done polling
+        } else {
+          setOverallStatus('partial');
+          return true; // partial failure, stop polling and show retry
+        }
+      }
+
+      return false; // keep polling
+    };
+
+    if (checkStatus()) return;
+
+    // Poll every 2s if plan is in a transitional state (draft/approved)
+    const interval = setInterval(async () => {
+      try {
+        const freshPlan = await api.getSplitPlanByDeposit(depositId!);
+        if (freshPlan.status === 'completed') {
+          clearInterval(interval);
+          setOverallStatus('complete');
+          setTimeout(() => {
+            router.replace(`/deposit/${depositId}/complete`);
+          }, 800);
+        } else if (freshPlan.status === 'executing') {
+          const allDone = freshPlan.actions.every((a) => a.executed);
+          if (allDone) {
+            clearInterval(interval);
+            setOverallStatus('complete');
+            setTimeout(() => {
+              router.replace(`/deposit/${depositId}/complete`);
+            }, 800);
+          }
+        }
+      } catch {
+        // Plan may not exist yet, keep polling
+      }
+    }, 2000);
+
+    return () => clearInterval(interval);
+  }, [plan, depositId, router]);
 
   // Format currency
   const formatCurrency = (amount: number) => {
@@ -164,16 +150,34 @@ export default function ProcessingScreen() {
     })}`;
   };
 
-  // Retry failed allocations
-  const handleRetry = () => {
+  // Retry failed/pending actions
+  const handleRetry = async () => {
+    if (!plan?.id) return;
+    setIsRetrying(true);
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    // Reset failed items to pending and reprocess
-    setStatuses((prev) =>
-      prev.map((s) =>
-        s.status === 'error' ? { ...s, status: 'pending', error: undefined } : s
-      )
-    );
-    // In a real app, this would trigger the retry logic
+
+    try {
+      const result = await api.retrySplitPlan(plan.id);
+      setActionResults(result.action_results);
+
+      const allDone = result.action_results.every(
+        (r) => r.status === 'completed' || r.status === 'manual_required'
+      );
+      if (allDone) {
+        setOverallStatus('complete');
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        setTimeout(() => {
+          router.replace(`/deposit/${depositId}/complete`);
+        }, 1000);
+      } else {
+        setOverallStatus('partial');
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+      }
+    } catch (error) {
+      console.error('Retry failed:', error);
+    } finally {
+      setIsRetrying(false);
+    }
   };
 
   // Continue with partial success
@@ -188,6 +192,11 @@ export default function ProcessingScreen() {
     outputRange: ['0deg', '360deg'],
   });
 
+  const getActionStatus = (bucketId: string): ProcessingStatus => {
+    const result = actionResults.find((r) => r.bucket_id === bucketId);
+    return result?.status || 'pending';
+  };
+
   const getStatusIcon = (status: ProcessingStatus) => {
     switch (status) {
       case 'pending':
@@ -198,10 +207,12 @@ export default function ProcessingScreen() {
             <Ionicons name="sync" size={18} color={Colors.primary} />
           </Animated.View>
         );
-      case 'complete':
+      case 'completed':
         return <Ionicons name="checkmark-circle" size={18} color={Colors.status.success} />;
-      case 'error':
+      case 'failed':
         return <Ionicons name="alert-circle" size={18} color={Colors.status.error} />;
+      case 'manual_required':
+        return <Ionicons name="open-outline" size={18} color={Colors.status.warning} />;
     }
   };
 
@@ -249,14 +260,14 @@ export default function ProcessingScreen() {
 
         {/* Allocation Status List */}
         <Card style={styles.statusCard}>
-          {MOCK_ALLOCATIONS.map((allocation, index) => {
-            const status = statuses.find((s) => s.id === allocation.id);
+          {allocations.map((allocation, index) => {
+            const status = getActionStatus(allocation.id);
             return (
               <View
                 key={allocation.id}
                 style={[
                   styles.statusRow,
-                  index < MOCK_ALLOCATIONS.length - 1 && styles.statusRowBorder,
+                  index < allocations.length - 1 && styles.statusRowBorder,
                 ]}
               >
                 <View style={styles.statusLeft}>
@@ -269,7 +280,7 @@ export default function ProcessingScreen() {
                 <View style={styles.statusRight}>
                   <Text style={styles.allocationAmount}>{formatCurrency(allocation.amount)}</Text>
                   <View style={styles.statusIconContainer}>
-                    {getStatusIcon(status?.status || 'pending')}
+                    {getStatusIcon(status)}
                   </View>
                 </View>
               </View>
@@ -277,11 +288,11 @@ export default function ProcessingScreen() {
           })}
         </Card>
 
-        {/* Action Buttons (only show on partial failure) */}
+        {/* Action Buttons */}
         {overallStatus === 'partial' && (
           <View style={styles.actions}>
-            <Button onPress={handleRetry} variant="primary">
-              Retry Failed Transfers
+            <Button onPress={handleRetry} variant="primary" disabled={isRetrying}>
+              {isRetrying ? 'Retrying...' : 'Retry Failed Transfers'}
             </Button>
             <Button onPress={handleContinue} variant="secondary">
               Continue Anyway

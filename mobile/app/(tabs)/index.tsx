@@ -3,11 +3,12 @@
  * Main home screen with balance overview, pending splits, and bucket summary
  */
 
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { Dimensions, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useFocusEffect } from '@react-navigation/native';
 
 import { useAuth } from '@/contexts/AuthContext';
 import { useBuckets, useDeposits, useDepositMutations } from '@/hooks';
@@ -34,6 +35,14 @@ export default function DashboardScreen() {
   const [showAddDeposit, setShowAddDeposit] = useState(false);
 
   const isLoading = bucketsLoading || depositsLoading;
+
+  // Refetch data when tab gains focus (e.g., after completing a split)
+  useFocusEffect(
+    useCallback(() => {
+      refetchBuckets();
+      refetchDeposits();
+    }, [refetchBuckets, refetchDeposits])
+  );
 
   const totalBalance = buckets.reduce((sum, b) => sum + b.current_balance, 0);
 

@@ -25,6 +25,7 @@ import { FontFamily, FontSize, LetterSpacing } from '@/constants/typography';
 import { BorderRadius, Spacing } from '@/constants/spacing';
 import { Shadows } from '@/constants/shadows';
 import { useDeposit, useBuckets, useSplitPlan } from '@/hooks';
+import * as api from '@/services/api';
 
 // Mock data for testing
 const MOCK_DEPOSIT_AMOUNT = 1200;
@@ -95,11 +96,52 @@ export default function SplitConfirmScreen() {
     setIsSubmitting(true);
 
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 500));
-      router.push(`/deposit/${depositId}/processing`);
+      let planToExecute = plan;
+
+      // Create plan from preview if it doesn't exist yet
+      if (!planToExecute?.id && preview) {
+        planToExecute = await api.createSplitPlan({
+          deposit_id: depositId!,
+          total_amount: preview.total_amount,
+          actions: preview.actions.map((a) => ({
+            bucket_id: a.bucket_id,
+            amount: a.amount,
+          })),
+        });
+      }
+
+      if (!planToExecute?.id) {
+        console.error('No plan or preview available');
+        return;
+      }
+
+      // If plan is already completed, go straight to complete
+      if (planToExecute.status === 'completed') {
+        router.replace(`/deposit/${depositId}/complete`);
+        return;
+      }
+
+      // If plan is mid-execution (partial failure from earlier), go to processing
+      if (planToExecute.status === 'executing') {
+        router.push(`/deposit/${depositId}/processing`);
+        return;
+      }
+
+      // Execute the split plan via backend
+      const result = await api.executeSplitPlan(planToExecute.id);
+      // Navigate to complete if fully done, processing if partial/pending
+      const allDone = result.action_results.every(
+        (a) => a.status === 'completed' || a.status === 'manual_required'
+      );
+      if (allDone) {
+        router.replace(`/deposit/${depositId}/complete`);
+      } else {
+        router.push(`/deposit/${depositId}/processing`);
+      }
     } catch (error) {
       console.error('Failed to execute split:', error);
+      // Navigate to processing anyway so user can retry
+      router.push(`/deposit/${depositId}/processing`);
     } finally {
       setIsSubmitting(false);
     }
