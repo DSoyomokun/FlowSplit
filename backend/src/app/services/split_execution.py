@@ -21,6 +21,7 @@ from app.crud import (
     mark_action_executed,
 )
 from app.models.deposit import Deposit, DepositStatus
+from app.models.bucket import DeliveryMethod
 from app.models.split_plan import SplitAction, SplitPlan, SplitPlanStatus
 from app.services.notification import notification_service
 from app.services.transfer import transfer_service, TransferResult
@@ -197,6 +198,7 @@ class SplitExecutionService:
                         bucket_id=bucket.id,
                         amount=amount,
                         deposit_id=deposit.id,
+                        configured_url=getattr(bucket, 'external_url', None),
                     )
                     return ActionExecutionResult(
                         action_id=action.id,
@@ -247,9 +249,10 @@ class SplitExecutionService:
 
     def _requires_manual_action(self, bucket: Any) -> bool:
         """Check if a bucket requires manual action (external transfer)."""
-        # Buckets with external delivery methods require manual action
-        # This would be determined by bucket configuration
-        # For now, check if bucket has an external_url configured
+        destination_type = getattr(bucket, 'destination_type', None)
+        if destination_type == DeliveryMethod.EXTERNAL_LINK.value:
+            return True
+        # Also check for external_url as a fallback
         return getattr(bucket, 'external_url', None) is not None
 
     async def _send_completion_notification(

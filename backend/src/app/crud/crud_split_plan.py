@@ -8,11 +8,18 @@ from app.models.split_plan import SplitAction, SplitPlan, SplitPlanStatus
 from app.schemas.split_plan import SplitPlanCreate
 
 
+def _plan_load_options():
+    """Standard eager-loading options for split plans."""
+    return [
+        selectinload(SplitPlan.actions).selectinload(SplitAction.bucket),
+    ]
+
+
 async def get_split_plan(session: AsyncSession, plan_id: str) -> SplitPlan | None:
     result = await session.execute(
         select(SplitPlan)
         .where(SplitPlan.id == plan_id)
-        .options(selectinload(SplitPlan.actions))
+        .options(*_plan_load_options())
     )
     return result.scalar_one_or_none()
 
@@ -23,7 +30,7 @@ async def get_split_plan_by_deposit(
     result = await session.execute(
         select(SplitPlan)
         .where(SplitPlan.deposit_id == deposit_id)
-        .options(selectinload(SplitPlan.actions))
+        .options(*_plan_load_options())
     )
     return result.scalar_one_or_none()
 
@@ -50,11 +57,11 @@ async def create_split_plan(
     await session.flush()
     await session.refresh(plan)
 
-    # Load actions
+    # Load actions with bucket relationships
     result = await session.execute(
         select(SplitPlan)
         .where(SplitPlan.id == plan.id)
-        .options(selectinload(SplitPlan.actions))
+        .options(*_plan_load_options())
     )
     return result.scalar_one()
 

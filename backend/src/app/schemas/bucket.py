@@ -2,7 +2,7 @@ from datetime import datetime
 
 from pydantic import BaseModel, Field
 
-from app.models.bucket import BucketType
+from app.models.bucket import BucketType, DeliveryMethod
 
 
 class BucketBase(BaseModel):
@@ -12,6 +12,9 @@ class BucketBase(BaseModel):
     bucket_type: BucketType = BucketType.PERCENTAGE
     allocation_value: float = Field(ge=0)
     target_amount: float | None = None
+    destination_type: DeliveryMethod | None = DeliveryMethod.INTERNAL_TRANSFER
+    external_url: str | None = None
+    external_name: str | None = None
 
 
 class BucketCreate(BucketBase):
@@ -27,6 +30,9 @@ class BucketUpdate(BaseModel):
     target_amount: float | None = None
     sort_order: int | None = None
     is_active: bool | None = None
+    destination_type: DeliveryMethod | None = None
+    external_url: str | None = None
+    external_name: str | None = None
 
 
 class BucketResponse(BucketBase):

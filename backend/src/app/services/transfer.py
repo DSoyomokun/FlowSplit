@@ -130,6 +130,7 @@ class TransferService:
         bucket_id: str,
         amount: float,
         deposit_id: str,
+        configured_url: str | None = None,
     ) -> str:
         """
         Generate an external payment link for manual transfers.
@@ -143,21 +144,19 @@ class TransferService:
             bucket_id: Target bucket ID
             amount: Amount to transfer
             deposit_id: Source deposit ID
+            configured_url: Pre-configured URL from bucket settings
 
         Returns:
             URL for the external payment
         """
         logger.info(f"Generating external link: bucket={bucket_id}, amount={amount}")
 
-        # In production, this would:
-        # 1. Look up the bucket's external service configuration
-        # 2. Generate a pre-filled payment link with the amount
-        # 3. Track the link for completion status
+        # Use the bucket's configured URL if available
+        if configured_url:
+            separator = "&" if "?" in configured_url else "?"
+            return f"{configured_url}{separator}a={amount}"
 
-        # Example: Pushpay link generation
-        # pushpay_url = await self._generate_pushpay_link(bucket, amount)
-
-        # For development, return a placeholder URL
+        # Fallback placeholder URL
         base_url = "https://flowsplit.app/pay"
         return f"{base_url}?bucket={bucket_id}&amount={amount}&ref={deposit_id}"
 

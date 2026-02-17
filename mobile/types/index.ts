@@ -19,6 +19,9 @@ export interface Bucket {
   allocation_value: number;
   target_amount: number | null;
   current_balance: number;
+  destination_type: 'internal_transfer' | 'external_link' | null;
+  external_url: string | null;
+  external_name: string | null;
   sort_order: number;
   is_active: boolean;
   created_at: string;

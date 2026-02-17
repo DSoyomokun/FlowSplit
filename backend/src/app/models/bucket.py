@@ -14,6 +14,11 @@ class BucketType(str, Enum):
     FIXED = "fixed"
 
 
+class DeliveryMethod(str, Enum):
+    INTERNAL_TRANSFER = "internal_transfer"
+    EXTERNAL_LINK = "external_link"
+
+
 class Bucket(Base):
     __tablename__ = "buckets"
 
@@ -36,6 +41,14 @@ class Bucket(Base):
     allocation_value: Mapped[float] = mapped_column(Numeric(12, 2), default=0)
     target_amount: Mapped[float | None] = mapped_column(Numeric(12, 2), nullable=True)
     current_balance: Mapped[float] = mapped_column(Numeric(12, 2), default=0)
+    destination_type: Mapped[str | None] = mapped_column(
+        String(20), nullable=True, default=DeliveryMethod.INTERNAL_TRANSFER.value
+    )
+    destination_account_id: Mapped[str | None] = mapped_column(
+        UUID(as_uuid=False), nullable=True
+    )
+    external_url: Mapped[str | None] = mapped_column(String, nullable=True)
+    external_name: Mapped[str | None] = mapped_column(String(100), nullable=True)
     sort_order: Mapped[int] = mapped_column(default=0)
     is_active: Mapped[bool] = mapped_column(default=True)
     created_at: Mapped[datetime] = mapped_column(
