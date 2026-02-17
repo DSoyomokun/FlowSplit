@@ -37,7 +37,7 @@ export const DEFAULT_CONFIG: DonutConfig = {
   center: 50,
   radius: 40,
   strokeWidth: 12,
-  handleRadius: 4.5,
+  handleRadius: 6,
   circumference: 2 * Math.PI * 40,
 };
 

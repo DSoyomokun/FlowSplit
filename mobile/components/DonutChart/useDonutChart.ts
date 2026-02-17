@@ -3,7 +3,7 @@
  * Manages donut chart state and calculations
  */
 
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo, useEffect, useRef } from 'react';
 import { DonutSegment, MIN_SEGMENT_SIZE } from './types';
 
 interface UseDonutChartProps {
@@ -28,6 +28,16 @@ export function useDonutChart({
   onSegmentsChange,
 }: UseDonutChartProps): UseDonutChartReturn {
   const [segments, setSegments] = useState<DonutSegment[]>(initialSegments);
+  const isInitialRender = useRef(true);
+
+  // Notify parent after segments change (not during render)
+  useEffect(() => {
+    if (isInitialRender.current) {
+      isInitialRender.current = false;
+      return;
+    }
+    onSegmentsChange?.(segments);
+  }, [segments]);
 
   // Calculate split points from segments
   // Split points are cumulative percentages: [10, 25, 35] means
@@ -57,11 +67,10 @@ export function useDonutChart({
         );
         updated[index] = { ...updated[index], percentage: clampedPercentage };
 
-        onSegmentsChange?.(updated);
         return updated;
       });
     },
-    [onSegmentsChange]
+    []
   );
 
   // Update split point (used by drag handles)
@@ -70,28 +79,36 @@ export function useDonutChart({
       setSegments((prev) => {
         const updated = [...prev];
 
+        // Calculate current split points from prev state (not stale closure)
+        const currentSplitPoints: number[] = [];
+        let cumulative = 0;
+        prev.forEach((segment) => {
+          cumulative += segment.percentage;
+          currentSplitPoints.push(cumulative);
+        });
+
         // Calculate constraints
         const minPoint =
           handleIndex === 0
             ? MIN_SEGMENT_SIZE
-            : splitPoints[handleIndex - 1] + MIN_SEGMENT_SIZE;
+            : currentSplitPoints[handleIndex - 1] + MIN_SEGMENT_SIZE;
 
         const maxPoint =
           handleIndex === prev.length - 1
             ? 100 - MIN_SEGMENT_SIZE
-            : splitPoints[handleIndex + 1] - MIN_SEGMENT_SIZE;
+            : currentSplitPoints[handleIndex + 1] - MIN_SEGMENT_SIZE;
 
         // Clamp the new point
         const clampedPoint = Math.max(minPoint, Math.min(maxPoint, newPoint));
 
         // Calculate new percentage for this segment
-        const prevPoint = handleIndex === 0 ? 0 : splitPoints[handleIndex - 1];
+        const prevPoint = handleIndex === 0 ? 0 : currentSplitPoints[handleIndex - 1];
         const newPercentage = clampedPoint - prevPoint;
         updated[handleIndex] = { ...updated[handleIndex], percentage: newPercentage };
 
         // Adjust next segment if exists
         if (handleIndex < prev.length - 1) {
-          const nextPoint = splitPoints[handleIndex + 1];
+          const nextPoint = currentSplitPoints[handleIndex + 1];
           const nextPercentage = nextPoint - clampedPoint;
           updated[handleIndex + 1] = {
             ...updated[handleIndex + 1],
@@ -99,11 +116,10 @@ export function useDonutChart({
           };
         }
 
-        onSegmentsChange?.(updated);
         return updated;
       });
     },
-    [splitPoints, onSegmentsChange]
+    []
   );
 
   // Get amounts for each segment
@@ -117,8 +133,7 @@ export function useDonutChart({
   // Reset to initial segments
   const resetSegments = useCallback(() => {
     setSegments(initialSegments);
-    onSegmentsChange?.(initialSegments);
-  }, [initialSegments, onSegmentsChange]);
+  }, [initialSegments]);
 
   return {
     segments,

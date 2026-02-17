@@ -139,7 +139,7 @@ export default function SplitAllocationScreen() {
     <View style={styles.donutCenter}>
       <Text style={styles.centerLabel}>SPLIT PLAN</Text>
       <Text style={styles.centerAmount}>{formatCurrency(depositAmount)}</Text>
-      <Text style={styles.centerHint}>Your allocation</Text>
+      <Text style={styles.centerHint}>Drag to adjust</Text>
     </View>
   );
 
@@ -181,10 +181,10 @@ export default function SplitAllocationScreen() {
               segments={allocations}
               total={depositAmount}
               onSegmentsChange={handleSegmentsChange}
-              editable={false}
+              editable={true}
               size={260}
-              strokeWidth={40}
-              showHandles={false}
+              strokeWidth={16}
+              showHandles={true}
               showLabels={false}
               centerContent={centerContent}
             />

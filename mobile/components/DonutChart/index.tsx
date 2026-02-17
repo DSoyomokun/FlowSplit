@@ -41,6 +41,7 @@ export function DonutChart({
   const containerRef = useRef<View>(null);
   const [layout, setLayout] = React.useState({ width: size, height: size });
   const [activeHandle, setActiveHandle] = React.useState<number | null>(null);
+  const activeHandleRef = useRef<number | null>(null);
 
   const config: DonutConfig = {
     ...DEFAULT_CONFIG,
@@ -113,11 +114,14 @@ export function DonutChart({
   );
 
   // Pan gesture for dragging handles
+  // .runOnJS(true) is required because callbacks reference JS-thread functions
   const panGesture = Gesture.Pan()
+    .runOnJS(true)
     .enabled(editable && showHandles)
     .onBegin((event) => {
       const handleIndex = findClosestHandle(event.x, event.y);
       if (handleIndex !== null) {
+        activeHandleRef.current = handleIndex;
         setActiveHandle(handleIndex);
         if (Platform.OS !== 'web') {
           Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
@@ -125,20 +129,22 @@ export function DonutChart({
       }
     })
     .onUpdate((event) => {
-      if (activeHandle !== null) {
+      if (activeHandleRef.current !== null) {
         const newPercentage = touchToPercentage(event.x, event.y);
-        updateSplitPoint(activeHandle, newPercentage);
+        updateSplitPoint(activeHandleRef.current, newPercentage);
       }
     })
     .onEnd(() => {
-      if (activeHandle !== null) {
+      if (activeHandleRef.current !== null) {
         if (Platform.OS !== 'web') {
           Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
         }
       }
+      activeHandleRef.current = null;
       setActiveHandle(null);
     })
     .onFinalize(() => {
+      activeHandleRef.current = null;
       setActiveHandle(null);
     });
 
