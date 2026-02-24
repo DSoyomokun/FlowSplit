@@ -1,5 +1,5 @@
 import { supabase } from './supabase';
-import type { Bucket, Deposit, SplitPlan, SplitPlanPreview, SplitExecutionResponse, User } from '@/types';
+import type { BankAccount, Bucket, Deposit, LinkTokenResponse, SplitPlan, SplitPlanPreview, SplitExecutionResponse, User } from '@/types';
 
 const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:8000/api/v1';
 
@@ -154,5 +154,44 @@ export async function executeSplitPlan(id: string): Promise<SplitExecutionRespon
 export async function retrySplitPlan(id: string): Promise<SplitExecutionResponse> {
   return request<SplitExecutionResponse>(`/split-plans/${id}/retry`, {
     method: 'POST',
+  });
+}
+
+// Bank Accounts
+export async function createLinkToken(): Promise<LinkTokenResponse> {
+  return request<LinkTokenResponse>('/bank-accounts/link-token', {
+    method: 'POST',
+    body: JSON.stringify({}),
+  });
+}
+
+export async function exchangePublicToken(data: {
+  public_token: string;
+  institution_id?: string;
+  institution_name?: string;
+}): Promise<BankAccount[]> {
+  return request<BankAccount[]>('/bank-accounts/exchange-token', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  });
+}
+
+export async function getBankAccounts(): Promise<BankAccount[]> {
+  return request<BankAccount[]>('/bank-accounts');
+}
+
+export async function updateBankAccount(
+  id: string,
+  data: { name?: string; is_primary?: boolean }
+): Promise<BankAccount> {
+  return request<BankAccount>(`/bank-accounts/${id}`, {
+    method: 'PATCH',
+    body: JSON.stringify(data),
+  });
+}
+
+export async function deleteBankAccount(id: string): Promise<void> {
+  return request<void>(`/bank-accounts/${id}`, {
+    method: 'DELETE',
   });
 }

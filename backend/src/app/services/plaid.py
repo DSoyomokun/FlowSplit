@@ -5,16 +5,40 @@ Handles account linking, transaction monitoring, and balance checks
 Story 83: Plaid integration architecture
 """
 
+import asyncio
 import logging
 from dataclasses import dataclass
 from datetime import date, datetime
 from enum import Enum
 from typing import Any
 
+import plaid
+from plaid.api import plaid_api
+from plaid.model.accounts_balance_get_request import AccountsBalanceGetRequest
+from plaid.model.accounts_balance_get_request_options import (
+    AccountsBalanceGetRequestOptions,
+)
+from plaid.model.accounts_get_request import AccountsGetRequest
+from plaid.model.country_code import CountryCode
+from plaid.model.item_public_token_exchange_request import (
+    ItemPublicTokenExchangeRequest,
+)
+from plaid.model.link_token_create_request import LinkTokenCreateRequest
+from plaid.model.link_token_create_request_user import LinkTokenCreateRequestUser
+from plaid.model.products import Products
+from plaid.model.transactions_sync_request import TransactionsSyncRequest
+
 from app.core.config import settings
 
 
 logger = logging.getLogger(__name__)
+
+
+PLAID_ENV_URLS = {
+    "sandbox": plaid.Environment.Sandbox,
+    "development": plaid.Environment.Sandbox,  # Use sandbox host for development
+    "production": plaid.Environment.Production,
+}
 
 
 class PlaidEnvironment(str, Enum):
@@ -70,36 +94,12 @@ class LinkTokenResponse:
 
 class PlaidService:
     """
-    Service for Plaid integration.
-
-    Architecture:
-    ┌──────────────────────────────────────────────────────────────┐
-    │                      FlowSplit App                          │
-    │  ┌─────────────┐    ┌─────────────┐    ┌─────────────┐     │
-    │  │ Account     │    │ Transaction │    │ Transfer    │     │
-    │  │ Linking     │    │ Monitoring  │    │ Execution   │     │
-    │  └──────┬──────┘    └──────┬──────┘    └──────┬──────┘     │
-    └─────────┼──────────────────┼──────────────────┼────────────┘
-              │                  │                  │
-              ▼                  ▼                  ▼
-    ┌─────────────────────────────────────────────────────────────┐
-    │                     Plaid API                               │
-    │  ┌─────────┐  ┌─────────────┐  ┌─────────┐  ┌─────────────┐│
-    │  │ Link    │  │ Transactions│  │ Balance │  │ Transfer    ││
-    │  └─────────┘  └─────────────┘  └─────────┘  └─────────────┘│
-    └─────────────────────────────────────────────────────────────┘
-
-    Webhook Flow:
-    1. User links account via Plaid Link
-    2. We receive ITEM_LOGIN_REQUIRED or TRANSACTIONS_SYNC webhooks
-    3. On new transaction, check if it's a deposit
-    4. Create Deposit record and notify user
-    5. User approves split plan
-    6. Execute transfers via Plaid Transfer API
+    Service for Plaid integration using the plaid-python SDK.
+    All sync SDK calls are wrapped in asyncio.to_thread().
     """
 
     def __init__(self):
-        self.client: Any = None
+        self.client: plaid_api.PlaidApi | None = None
         self.environment = PlaidEnvironment.SANDBOX
         self.products = [
             PlaidProductType.TRANSACTIONS,
@@ -109,25 +109,41 @@ class PlaidService:
         self._init_client()
 
     def _init_client(self) -> None:
-        """Initialize Plaid client."""
+        """Initialize Plaid client with real SDK."""
         if not (settings.plaid_client_id and settings.plaid_secret):
             logger.warning("Plaid credentials not configured")
             return
 
         try:
-            # In production, use official plaid-python client:
-            # from plaid.api import plaid_api
-            # from plaid.model import *
-            # configuration = plaid.Configuration(...)
-            # self.client = plaid_api.PlaidApi(plaid.ApiClient(configuration))
-
             self.environment = PlaidEnvironment(
                 settings.plaid_environment or "sandbox"
             )
+
+            configuration = plaid.Configuration(
+                host=PLAID_ENV_URLS.get(
+                    self.environment.value, plaid.Environment.Sandbox
+                ),
+                api_key={
+                    "clientId": settings.plaid_client_id,
+                    "secret": settings.plaid_secret,
+                },
+            )
+
+            api_client = plaid.ApiClient(configuration)
+            self.client = plaid_api.PlaidApi(api_client)
+
             logger.info(f"Plaid client initialized ({self.environment.value})")
 
         except Exception as e:
             logger.error(f"Failed to initialize Plaid: {e}")
+
+    def _ensure_client(self) -> plaid_api.PlaidApi:
+        """Raise if client not initialized."""
+        if self.client is None:
+            raise RuntimeError(
+                "Plaid client not initialized. Check credentials in .env"
+            )
+        return self.client
 
     # -------------------------------------------------------------------------
     # Account Linking
@@ -148,27 +164,23 @@ class PlaidService:
         Returns:
             LinkTokenResponse with token and expiration
         """
+        client = self._ensure_client()
         logger.info(f"Creating link token for user {user_id}")
 
-        # In production:
-        # request = LinkTokenCreateRequest(
-        #     user=LinkTokenCreateRequestUser(client_user_id=user_id),
-        #     client_name="FlowSplit",
-        #     products=[p.value for p in self.products],
-        #     country_codes=[CountryCode("US")],
-        #     language="en",
-        #     redirect_uri=redirect_uri,
-        # )
-        # response = self.client.link_token_create(request)
-        # return LinkTokenResponse(
-        #     link_token=response.link_token,
-        #     expiration=response.expiration,
-        # )
+        request = LinkTokenCreateRequest(
+            user=LinkTokenCreateRequestUser(client_user_id=user_id),
+            client_name="FlowSplit",
+            products=[Products(p.value) for p in self.products],
+            country_codes=[CountryCode("US")],
+            language="en",
+        )
+        if redirect_uri:
+            request.redirect_uri = redirect_uri
 
-        # Sandbox placeholder
+        response = await asyncio.to_thread(client.link_token_create, request)
         return LinkTokenResponse(
-            link_token="link-sandbox-placeholder",
-            expiration=datetime.utcnow(),
+            link_token=response.link_token,
+            expiration=response.expiration,
         )
 
     async def exchange_public_token(
@@ -186,15 +198,14 @@ class PlaidService:
         Returns:
             Tuple of (access_token, item_id)
         """
+        client = self._ensure_client()
         logger.info("Exchanging public token")
 
-        # In production:
-        # request = ItemPublicTokenExchangeRequest(public_token=public_token)
-        # response = self.client.item_public_token_exchange(request)
-        # return (response.access_token, response.item_id)
-
-        # Sandbox placeholder
-        return ("access-sandbox-placeholder", "item-sandbox-placeholder")
+        request = ItemPublicTokenExchangeRequest(public_token=public_token)
+        response = await asyncio.to_thread(
+            client.item_public_token_exchange, request
+        )
+        return (response.access_token, response.item_id)
 
     async def get_accounts(
         self,
@@ -209,27 +220,40 @@ class PlaidService:
         Returns:
             List of PlaidAccount objects
         """
+        client = self._ensure_client()
         logger.info("Fetching accounts")
 
-        # In production:
-        # request = AccountsGetRequest(access_token=access_token)
-        # response = self.client.accounts_get(request)
-        # return [self._map_account(a) for a in response.accounts]
+        request = AccountsGetRequest(access_token=access_token)
+        response = await asyncio.to_thread(client.accounts_get, request)
 
-        # Sandbox placeholder
+        # Try to get institution info
+        institution_id = None
+        institution_name = None
+        if hasattr(response, "item") and response.item:
+            institution_id = response.item.institution_id
+
         return [
             PlaidAccount(
-                account_id="acc_sandbox_checking",
-                name="Checking",
-                official_name="Primary Checking",
-                type="depository",
-                subtype="checking",
-                mask="1234",
-                current_balance=5000.00,
-                available_balance=4500.00,
-                institution_id="ins_1",
-                institution_name="Sandbox Bank",
-            ),
+                account_id=a.account_id,
+                name=a.name,
+                official_name=getattr(a, "official_name", None),
+                type=a.type.value if hasattr(a.type, "value") else str(a.type),
+                subtype=(
+                    a.subtype.value
+                    if a.subtype and hasattr(a.subtype, "value")
+                    else str(a.subtype) if a.subtype else None
+                ),
+                mask=a.mask,
+                current_balance=(
+                    float(a.balances.current) if a.balances.current is not None else None
+                ),
+                available_balance=(
+                    float(a.balances.available) if a.balances.available is not None else None
+                ),
+                institution_id=institution_id,
+                institution_name=institution_name,
+            )
+            for a in response.accounts
         ]
 
     # -------------------------------------------------------------------------
@@ -253,21 +277,31 @@ class PlaidService:
         Returns:
             Tuple of (transactions, new_cursor)
         """
+        client = self._ensure_client()
         logger.info(f"Syncing transactions (cursor={cursor})")
 
-        # In production:
-        # request = TransactionsSyncRequest(
-        #     access_token=access_token,
-        #     cursor=cursor,
-        # )
-        # response = self.client.transactions_sync(request)
-        # return (
-        #     [self._map_transaction(t) for t in response.added],
-        #     response.next_cursor,
-        # )
+        kwargs: dict[str, Any] = {"access_token": access_token}
+        if cursor:
+            kwargs["cursor"] = cursor
 
-        # Sandbox placeholder
-        return ([], cursor or "cursor_0")
+        request = TransactionsSyncRequest(**kwargs)
+        response = await asyncio.to_thread(client.transactions_sync, request)
+
+        transactions = [
+            PlaidTransaction(
+                transaction_id=t.transaction_id,
+                account_id=t.account_id,
+                amount=float(t.amount),
+                date=t.date,
+                name=t.name,
+                merchant_name=getattr(t, "merchant_name", None),
+                category=list(t.category) if t.category else [],
+                pending=t.pending,
+            )
+            for t in response.added
+        ]
+
+        return (transactions, response.next_cursor)
 
     async def get_balance(
         self,
@@ -284,21 +318,23 @@ class PlaidService:
         Returns:
             Dict of account_id -> available_balance
         """
+        client = self._ensure_client()
         logger.info("Fetching balances")
 
-        # In production:
-        # request = AccountsBalanceGetRequest(
-        #     access_token=access_token,
-        #     options=AccountsBalanceGetRequestOptions(account_ids=account_ids),
-        # )
-        # response = self.client.accounts_balance_get(request)
-        # return {
-        #     a.account_id: a.balances.available
-        #     for a in response.accounts
-        # }
+        kwargs: dict[str, Any] = {"access_token": access_token}
+        if account_ids:
+            kwargs["options"] = AccountsBalanceGetRequestOptions(
+                account_ids=account_ids
+            )
 
-        # Sandbox placeholder
-        return {"acc_sandbox_checking": 4500.00}
+        request = AccountsBalanceGetRequest(**kwargs)
+        response = await asyncio.to_thread(client.accounts_balance_get, request)
+
+        return {
+            a.account_id: float(a.balances.available)
+            for a in response.accounts
+            if a.balances.available is not None
+        }
 
     # -------------------------------------------------------------------------
     # Webhook Handlers

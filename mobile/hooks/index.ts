@@ -16,3 +16,6 @@ export { useSplitFlow } from './useSplitFlow';
 export { useBucketMutations } from './useBucketMutations';
 export { useDepositMutations } from './useDepositMutations';
 export { useSplitExecution, type ExecutionStatus } from './useSplitExecution';
+
+// Plaid
+export { usePlaidLink } from './usePlaidLink';

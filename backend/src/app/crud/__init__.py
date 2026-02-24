@@ -1,3 +1,12 @@
+from app.crud.crud_bank_account import (
+    create_bank_account,
+    deactivate_bank_account,
+    get_bank_account,
+    get_bank_account_by_plaid_account_id,
+    get_bank_accounts_by_user,
+    set_primary_bank_account,
+    update_bank_account,
+)
 from app.crud.crud_bucket import (
     create_bucket,
     delete_bucket,
@@ -46,6 +55,13 @@ __all__ = [
     "delete_bucket",
     "reorder_buckets",
     "update_bucket_balance",
+    "get_bank_account",
+    "get_bank_accounts_by_user",
+    "get_bank_account_by_plaid_account_id",
+    "create_bank_account",
+    "update_bank_account",
+    "deactivate_bank_account",
+    "set_primary_bank_account",
     "get_deposit",
     "get_deposits_by_user",
     "get_pending_deposits",

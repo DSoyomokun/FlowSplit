@@ -51,7 +51,7 @@ export default function SettingsScreen() {
             <Ionicons name="chevron-forward" size={20} color="#ccc" />
           </Pressable>
           <View style={styles.divider} />
-          <Pressable style={styles.menuItem}>
+          <Pressable style={styles.menuItem} onPress={() => router.push('/bank-accounts' as any)}>
             <Ionicons name="card-outline" size={22} color="#666" />
             <Text style={styles.menuText}>Bank Accounts</Text>
             <Ionicons name="chevron-forward" size={20} color="#ccc" />

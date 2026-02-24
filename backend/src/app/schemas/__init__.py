@@ -1,3 +1,11 @@
+from app.schemas.bank_account import (
+    BankAccountCreate,
+    BankAccountResponse,
+    BankAccountUpdate,
+    LinkTokenRequest,
+    LinkTokenResponse,
+    PublicTokenExchangeRequest,
+)
 from app.schemas.bucket import (
     BucketCreate,
     BucketReorder,
@@ -24,6 +32,12 @@ __all__ = [
     "BucketUpdate",
     "BucketResponse",
     "BucketReorder",
+    "BankAccountCreate",
+    "BankAccountUpdate",
+    "BankAccountResponse",
+    "LinkTokenRequest",
+    "LinkTokenResponse",
+    "PublicTokenExchangeRequest",
     "DepositCreate",
     "DepositResponse",
     "SplitActionCreate",

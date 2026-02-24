@@ -91,3 +91,24 @@ export interface SplitExecutionResponse {
   action_results: ActionExecutionResult[];
   completed_at: string | null;
 }
+
+export interface BankAccount {
+  id: string;
+  user_id: string;
+  institution_id: string | null;
+  institution_name: string | null;
+  name: string;
+  official_name: string | null;
+  type: string;
+  subtype: string | null;
+  mask: string | null;
+  is_primary: boolean;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface LinkTokenResponse {
+  link_token: string;
+  expiration: string;
+}
