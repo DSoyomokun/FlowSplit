@@ -6,11 +6,19 @@ Story 83: Plaid integration architecture
 """
 
 import asyncio
+import certifi
 import logging
+import os
+import ssl
 from dataclasses import dataclass
 from datetime import date, datetime
 from enum import Enum
 from typing import Any
+
+# Fix macOS SSL certificate issue before importing plaid
+os.environ["SSL_CERT_FILE"] = certifi.where()
+os.environ["REQUESTS_CA_BUNDLE"] = certifi.where()
+ssl._create_default_https_context = lambda: ssl.create_default_context(cafile=certifi.where())
 
 import plaid
 from plaid.api import plaid_api
@@ -104,7 +112,6 @@ class PlaidService:
         self.products = [
             PlaidProductType.TRANSACTIONS,
             PlaidProductType.AUTH,
-            PlaidProductType.TRANSFER,
         ]
         self._init_client()
 
@@ -127,6 +134,7 @@ class PlaidService:
                     "clientId": settings.plaid_client_id,
                     "secret": settings.plaid_secret,
                 },
+                ssl_ca_cert=certifi.where(),
             )
 
             api_client = plaid.ApiClient(configuration)

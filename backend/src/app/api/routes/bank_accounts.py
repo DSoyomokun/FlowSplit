@@ -1,6 +1,7 @@
 import logging
 
 from fastapi import APIRouter, HTTPException, status
+from plaid.exceptions import ApiException as PlaidApiException
 
 from app.api.deps import CurrentUser
 from app.core.database import SessionDep
@@ -34,15 +35,22 @@ async def create_link_token(
     body: LinkTokenRequest | None = None,
 ) -> LinkTokenResponse:
     """Create a Plaid Link token to initiate account linking."""
-    redirect_uri = body.redirect_uri if body else None
-    result = await plaid_service.create_link_token(
-        user_id=current_user.id,
-        redirect_uri=redirect_uri,
-    )
-    return LinkTokenResponse(
-        link_token=result.link_token,
-        expiration=result.expiration,
-    )
+    try:
+        redirect_uri = body.redirect_uri if body else None
+        result = await plaid_service.create_link_token(
+            user_id=current_user.id,
+            redirect_uri=redirect_uri,
+        )
+        return LinkTokenResponse(
+            link_token=result.link_token,
+            expiration=result.expiration,
+        )
+    except PlaidApiException as e:
+        logger.error(f"Plaid link token error: {e.body}")
+        raise HTTPException(status_code=400, detail=f"Plaid error: {e.body}")
+    except Exception as e:
+        logger.error(f"Link token error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.post(

@@ -12,6 +12,7 @@
     ]
   },
   "enabledMcpjsonServers": [
-    "supabase"
+    "supabase",
+    "plaid"
   ]
 }

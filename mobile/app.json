@@ -4,15 +4,9 @@
     "slug": "flowsplit",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/icon.png",
     "scheme": "flowsplit",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
-    "splash": {
-      "image": "./assets/splash-icon.png",
-      "resizeMode": "contain",
-      "backgroundColor": "#F8F8F8"
-    },
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.flowsplit.app",
@@ -23,14 +17,13 @@
       "infoPlist": {
         "UIBackgroundModes": [
           "remote-notification"
-        ]
+        ],
+        "NSAppTransportSecurity": {
+          "NSAllowsArbitraryLoads": true
+        }
       }
     },
     "android": {
-      "adaptiveIcon": {
-        "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#F8F8F8"
-      },
       "package": "com.flowsplit.app",
       "intentFilters": [
         {
@@ -55,18 +48,14 @@
     },
     "web": {
       "bundler": "metro",
-      "output": "single",
-      "favicon": "./assets/favicon.png"
+      "output": "single"
     },
     "plugins": [
       "expo-router",
       "expo-secure-store",
       [
         "expo-notifications",
-        {
-          "icon": "./assets/notification-icon.png",
-          "color": "#0EA5A5"
-        }
+        {}
       ],
       "expo-asset"
     ],
