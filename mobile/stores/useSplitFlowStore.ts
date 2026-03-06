@@ -6,7 +6,7 @@
  */
 
 import { create } from 'zustand';
-import type { Deposit, Bucket } from '@/types';
+import type { Deposit, Bucket, SplitExecutionResponse } from '@/types';
 
 export type SplitFlowStep = 'setup' | 'allocate' | 'confirm' | 'processing' | 'complete';
 
@@ -39,6 +39,7 @@ export interface SplitFlowState {
   processingErrors: Record<string, string>;
 
   // Result state
+  executionResult: SplitExecutionResponse | null;
   completedAt: string | null;
   hasPartialFailure: boolean;
 
@@ -50,6 +51,7 @@ export interface SplitFlowState {
   updateAllocation: (bucketId: string, percentage: number) => void;
   setSubmitting: (submitting: boolean) => void;
   setProcessingStatus: (bucketId: string, status: 'pending' | 'processing' | 'complete' | 'error', error?: string) => void;
+  setExecutionResult: (result: SplitExecutionResponse) => void;
   setComplete: (hasPartialFailure?: boolean) => void;
   resetFlow: () => void;
 
@@ -70,6 +72,7 @@ const initialState = {
   isSubmitting: false,
   processingStatuses: {},
   processingErrors: {},
+  executionResult: null,
   completedAt: null,
   hasPartialFailure: false,
 };
@@ -139,6 +142,8 @@ export const useSplitFlowStore = create<SplitFlowState>((set, get) => ({
         ? { ...state.processingErrors, [bucketId]: error }
         : state.processingErrors,
     })),
+
+  setExecutionResult: (result) => set({ executionResult: result }),
 
   setComplete: (hasPartialFailure = false) =>
     set({

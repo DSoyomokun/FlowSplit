@@ -24,6 +24,7 @@ import { BorderRadius, Spacing } from '@/constants/spacing';
 import { Shadows } from '@/constants/shadows';
 import { Header, Card, Button } from '@/components';
 import { useBuckets, useSplitPlan } from '@/hooks';
+import { useSplitFlowStore } from '@/stores/useSplitFlowStore';
 import * as api from '@/services/api';
 import type { ActionExecutionResult } from '@/types';
 
@@ -36,6 +37,7 @@ export default function ProcessingScreen() {
 
   const { buckets } = useBuckets();
   const { plan } = useSplitPlan(depositId || '');
+  const setExecutionResult = useSplitFlowStore((s) => s.setExecutionResult);
 
   // Animation values
   const [spinAnim] = useState(new Animated.Value(0));
@@ -158,6 +160,7 @@ export default function ProcessingScreen() {
 
     try {
       const result = await api.retrySplitPlan(plan.id);
+      setExecutionResult(result);
       setActionResults(result.action_results);
 
       const allDone = result.action_results.every(

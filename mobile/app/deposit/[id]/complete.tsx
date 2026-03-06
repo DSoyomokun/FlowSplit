@@ -1,6 +1,7 @@
 /**
  * Split Complete Screen
  * Success confirmation with allocation summary - matches Variants2/06-split-complete.html
+ * Shows ActionCard for Pushpay/external_link buckets requiring manual transfer
  *
  * Stories: 65, 66, 67
  */
@@ -13,6 +14,7 @@ import {
   ScrollView,
   Pressable,
   Platform,
+  ActivityIndicator,
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -23,23 +25,47 @@ import { Colors, BucketColors } from '@/constants/colors';
 import { FontFamily, FontSize, LetterSpacing } from '@/constants/typography';
 import { BorderRadius, Spacing } from '@/constants/spacing';
 import { Shadows } from '@/constants/shadows';
-
-// Mock data for development
-const MOCK_DEPOSIT_AMOUNT = 1200;
-const MOCK_ALLOCATIONS = [
-  { id: 'tithe', name: 'Tithe', amount: 120, color: '#0EA5A5' },
-  { id: 'savings', name: 'Savings', amount: 180, color: '#3B82F6' },
-  { id: 'investing', name: 'Investing', amount: 120, color: '#10B981' },
-];
+import { ActionCard } from '@/components';
+import { useBuckets, useSplitPlan } from '@/hooks';
+import { useSplitFlowStore } from '@/stores/useSplitFlowStore';
 
 export default function SplitCompleteScreen() {
   const router = useRouter();
   const { id: depositId } = useLocalSearchParams<{ id: string }>();
   const insets = useSafeAreaInsets();
 
-  // Calculate remainder
-  const totalAllocated = MOCK_ALLOCATIONS.reduce((sum, a) => sum + a.amount, 0);
-  const remainder = MOCK_DEPOSIT_AMOUNT - totalAllocated;
+  // Fetch real data
+  const { buckets, isLoading: bucketsLoading } = useBuckets();
+  const { plan, isLoading: planLoading } = useSplitPlan(depositId || '');
+  const executionResult = useSplitFlowStore((s) => s.executionResult);
+
+  const isLoading = bucketsLoading || planLoading;
+
+  // Build allocations from plan actions + bucket metadata
+  const depositAmount = plan?.total_amount || executionResult?.total_amount || 0;
+  const allocations = (plan?.actions || []).map((action, index) => {
+    const bucket = buckets.find((b) => b.id === action.bucket_id);
+    const actionResult = executionResult?.action_results.find(
+      (r) => r.bucket_id === action.bucket_id
+    );
+    return {
+      id: action.bucket_id,
+      name: bucket?.name || 'Bucket',
+      amount: action.amount,
+      color: bucket?.color || BucketColors[index % BucketColors.length],
+      destinationType: bucket?.destination_type || 'internal_transfer',
+      externalUrl: actionResult?.external_url || bucket?.external_url || null,
+      status: actionResult?.status || 'completed',
+    };
+  });
+
+  const totalAllocated = allocations.reduce((sum, a) => sum + a.amount, 0);
+  const remainder = depositAmount - totalAllocated;
+
+  // Find allocations that need manual action (Pushpay)
+  const manualActions = allocations.filter(
+    (a) => a.status === 'manual_required' && a.externalUrl
+  );
 
   // Format currency
   const formatCurrency = (amount: number) => {
@@ -63,6 +89,14 @@ export default function SplitCompleteScreen() {
     }
     router.replace('/(tabs)');
   };
+
+  if (isLoading) {
+    return (
+      <View style={[styles.container, styles.loadingContainer]}>
+        <ActivityIndicator size="large" color={Colors.primary} />
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>
@@ -96,20 +130,38 @@ export default function SplitCompleteScreen() {
         <View style={styles.messageSection}>
           <Text style={styles.title}>Split Complete</Text>
           <Text style={styles.subtitle}>
-            Your deposit of {formatCurrency(MOCK_DEPOSIT_AMOUNT)} has been allocated according to your plan.
+            Your deposit of {formatCurrency(depositAmount)} has been allocated according to your plan.
           </Text>
         </View>
+
+        {/* Action Cards for Pushpay / manual transfers */}
+        {manualActions.map((action) => (
+          <View key={`action-${action.id}`} style={styles.actionCardWrapper}>
+            <ActionCard
+              title="Action Pending"
+              description={`Complete the ${action.name} transfer`}
+              linkUrl={action.externalUrl!}
+              linkLabel="Open Pushpay Link"
+              deadline="Complete within 24 hours to sync records"
+            />
+          </View>
+        ))}
 
         {/* Allocation Summary Card */}
         <View style={styles.summaryCard}>
           <Text style={styles.sectionLabel}>Allocation Summary</Text>
 
           <View style={styles.allocationList}>
-            {MOCK_ALLOCATIONS.map((allocation) => (
+            {allocations.map((allocation) => (
               <View key={allocation.id} style={styles.allocationRow}>
                 <View style={styles.allocationLeft}>
                   <View style={[styles.colorDot, { backgroundColor: allocation.color }]} />
                   <Text style={styles.allocationName}>{allocation.name}</Text>
+                  {allocation.status === 'manual_required' && (
+                    <View style={styles.manualBadge}>
+                      <Text style={styles.manualBadgeText}>Manual Transfer Pending</Text>
+                    </View>
+                  )}
                 </View>
                 <Text style={styles.allocationAmount}>{formatCurrency(allocation.amount)}</Text>
               </View>
@@ -149,6 +201,10 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: Colors.background,
+  },
+  loadingContainer: {
+    justifyContent: 'center',
+    alignItems: 'center',
   },
 
   // Header
@@ -227,6 +283,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing[4],
   },
 
+  // Action Card
+  actionCardWrapper: {
+    width: '100%',
+    marginBottom: Spacing[6],
+  },
+
   // Summary Card
   summaryCard: {
     width: '100%',
@@ -261,6 +323,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: Spacing[3],
+    flex: 1,
   },
   colorDot: {
     width: 8,
@@ -276,6 +339,23 @@ const styles = StyleSheet.create({
     fontFamily: FontFamily.black,
     fontSize: FontSize.sm,
     color: Colors.text.primary,
+  },
+
+  // Manual Transfer Badge
+  manualBadge: {
+    backgroundColor: Colors.warning.bg,
+    borderWidth: 1,
+    borderColor: Colors.warning.border,
+    borderRadius: BorderRadius.sm,
+    paddingHorizontal: Spacing[2],
+    paddingVertical: 2,
+  },
+  manualBadgeText: {
+    fontFamily: FontFamily.bold,
+    fontSize: 10,
+    color: Colors.warning.text,
+    textTransform: 'uppercase',
+    letterSpacing: LetterSpacing.wide,
   },
 
   // Remainder

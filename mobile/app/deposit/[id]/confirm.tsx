@@ -25,6 +25,7 @@ import { FontFamily, FontSize, LetterSpacing } from '@/constants/typography';
 import { BorderRadius, Spacing } from '@/constants/spacing';
 import { Shadows } from '@/constants/shadows';
 import { useDeposit, useBuckets, useSplitPlan } from '@/hooks';
+import { useSplitFlowStore } from '@/stores/useSplitFlowStore';
 import * as api from '@/services/api';
 
 // Mock data for testing
@@ -45,6 +46,7 @@ export default function SplitConfirmScreen() {
   const { buckets, isLoading: bucketsLoading } = useBuckets();
   const { plan, preview, isLoading: planLoading } = useSplitPlan(depositId || '');
 
+  const setExecutionResult = useSplitFlowStore((s) => s.setExecutionResult);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const isLoading = depositLoading || bucketsLoading || planLoading;
@@ -129,6 +131,7 @@ export default function SplitConfirmScreen() {
 
       // Execute the split plan via backend
       const result = await api.executeSplitPlan(planToExecute.id);
+      setExecutionResult(result);
       // Navigate to complete if fully done, processing if partial/pending
       const allDone = result.action_results.every(
         (a) => a.status === 'completed' || a.status === 'manual_required'

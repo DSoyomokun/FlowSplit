@@ -151,11 +151,17 @@ Buckets specify a delivery method:
 2. **External Link (Manual Completion)**
    - For flows requiring 2FA or external checkout (e.g., church giving platform)
    - App generates a link with amount prefilled when supported
+   - Backend: `PushpayIntegration` service + `TransferService.generate_external_link()` handle URL generation
+   - Action status set to `manual_required`; complete screen renders an `ActionCard` with the link
+   - User taps "Open Pushpay Link" → browser opens with prefilled amount
+   - Amber "Manual Transfer Pending" badge shown in allocation summary
 
    **Example (Pushpay):**
    - Base: `https://pushpay.com/g/victorynorcross`
    - Prefill: `?a={{amount}}`
    - Generated: `https://pushpay.com/g/victorynorcross?a=173.46`
+
+   **Bucket setup:** Set `destination_type: "external_link"`, `external_url`, and `external_name` on the bucket.
 
 3. **Manual Only**
    - App records a recommended amount and a task for the user, but does not execute
@@ -178,18 +184,18 @@ Buckets specify a delivery method:
 ## 11) States & Lifecycle (MVP)
 
 ### Split Plan States
-- **PROPOSED** → created after deposit detection
-- **CONFIRMED** → user approves (may include edits)
+- **DRAFT** → created after deposit detection or user-initiated split
+- **APPROVED** → user confirms (may include edits)
 - **EXECUTING** → actions running
 - **COMPLETED** → all actions either executed (internal) or generated (external/manual)
 - **FAILED** → unrecoverable error, user notified
 
 ### Action States (per bucket)
 - **PENDING**
-- **READY** (after confirmation)
-- **SENT** (transfer initiated OR link generated)
-- **COMPLETED** (transfer confirmed OR user marked manual complete)
+- **PROCESSING** → action in progress
+- **COMPLETED** (transfer confirmed OR external link generated)
 - **FAILED** (with error + retry policy)
+- **MANUAL_REQUIRED** → external link bucket; user must complete manually (e.g., Pushpay)
 
 ---
 
@@ -207,7 +213,7 @@ Buckets specify a delivery method:
 | Split Complete | `app/deposit/[id]/complete.tsx` | 06-split-complete.html |
 | Split Partial Success | `app/deposit/[id]/complete.tsx` | 07-split-complete-partial.html |
 | Processing/Retry | `app/deposit/[id]/processing.tsx` | 08-split-processing-retry.html |
-| Manual Action Required | — | 09-split-complete-manual-action.html |
+| Manual Action Required | `app/deposit/[id]/complete.tsx` (ActionCard) | 09-split-complete-manual-action.html |
 | Split History | `app/(tabs)/history.tsx` | 12-split-history-ledger.html |
 
 ### A) Dashboard
@@ -243,6 +249,7 @@ Buckets specify a delivery method:
 ### D) Bucket Configuration
 - **Path:** `app/buckets/configure.tsx`
 - **Mockup:** 04-bucket-configuration.html
+- **Status:** UI shell built with loading/empty states; CRUD handlers are stubs (TODO). Bucket create/edit/delete/reorder must be done via API for now.
 - List of existing buckets with:
   - Color indicator
   - Name and emoji
@@ -299,7 +306,7 @@ Buckets specify a delivery method:
 - "Return to Dashboard" primary action
 - **Variants:**
   - Partial Success (07): Shows failed items with retry option
-  - Manual Action Required (09): External link buckets need user completion
+  - Manual Action Required (09): External link buckets render `ActionCard` component with Pushpay link, copy-link option, and 24-hour deadline notice. Amber badge on allocation rows.
 
 ### H) Split History / Ledger
 - **Path:** `app/(tabs)/history.tsx`
@@ -348,7 +355,7 @@ Buckets specify a delivery method:
 
 ## 13) MVP Requirements (Functional)
 
-1. User can connect bank accounts (read transactions; transfers optional depending on integration).
+1. User can connect bank accounts via **Plaid** (read transactions; transfers optional depending on integration).
 2. System detects posted deposits and creates split plans.
 3. User can create and manage buckets.
 4. User can confirm split plans in-app; SMS can notify and optionally approve.
@@ -380,25 +387,27 @@ Buckets specify a delivery method:
 # Appendix A — FastAPI Reference Architecture (MVP)
 
 ## A1) Services
-- **API Service (FastAPI)**
-  - Auth (MVP can be email + magic link or basic JWT)
-  - Bucket CRUD
-  - Split plan review/confirm
+- **API Service (FastAPI)** — implemented at `backend/src/app/`
+  - Auth via **Supabase** (JWT)
+  - Bucket CRUD (fully working)
+  - Split plan create/approve/execute/retry
+  - Deposit CRUD + manual entry
+  - Bank account linking via **Plaid**
   - History views
 
-- **Worker**
-  - Handles deposit ingestion events
-  - Computes split plans
-  - Executes actions (transfers, SMS, link generation)
+- **Key backend services (implemented):**
+  - `TransferService` — orchestrates split execution; routes to internal transfer or `generate_external_link()`
+  - `PushpayIntegration` — generates prefilled Pushpay URLs with amount parameter
+  - Split execution detects `manual_required` actions and returns `external_url` in results
 
-## A2) Suggested Infra
-- Postgres (primary DB)
-- Redis (optional, for job queue)
-- Background jobs:
-  - simple: APScheduler + DB locking (early MVP)
-  - robust: Celery/RQ/Arq (recommended)
+- **Worker** (not yet implemented)
+  - Planned: deposit ingestion events, background execution, SMS notifications
 
-- SMS: Twilio
+## A2) Infrastructure (Current)
+- **Postgres** via Supabase (primary DB)
+- **Supabase Auth** (JWT-based authentication)
+- **Plaid** (bank account linking + transaction reads)
+- Redis, background jobs, SMS — not yet implemented
 
 ## A3) Core Tables (Suggested)
 
@@ -431,13 +440,13 @@ Buckets specify a delivery method:
 
 ### split_plans
 - id, user_id, deposit_id
-- status (proposed|confirmed|executing|completed|failed)
+- status (draft|approved|executing|completed|failed)
 - created_at, confirmed_at
 
 ### split_actions
 - id, split_plan_id, bucket_id
 - amount
-- status (pending|ready|sent|completed|failed)
+- status (pending|processing|completed|failed|manual_required)
 - execution_type (transfer|external_link|manual_only)
 - external_link (nullable)
 - error_code, error_message
@@ -497,4 +506,4 @@ When creating split_actions:
 
 ---
 
-**Status:** PRD complete for MVP build.
+**Status:** PRD updated March 2026. Reflects implemented state: Plaid integration, Supabase auth, Pushpay external link flow, split execution with `manual_required` status. Bucket config UI still uses mock data (CRUD via API only).
