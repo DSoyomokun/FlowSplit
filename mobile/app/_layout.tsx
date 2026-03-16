@@ -40,6 +40,7 @@ export default function RootLayout() {
           <Stack.Screen name="deposit/[id]/complete" />
           <Stack.Screen name="bank-accounts/index" />
           <Stack.Screen name="buckets/configure" />
+          <Stack.Screen name="buckets/new" />
           <Stack.Screen
             name="split-plan/[id]"
             options={{ presentation: 'modal', headerShown: true, title: 'Split Plan' }}

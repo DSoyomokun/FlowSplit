@@ -5,7 +5,7 @@
  * Stories: 49, 50, 51, 52
  */
 
-import React, { useState, useMemo, useEffect, useCallback } from 'react';
+import React, { useState, useMemo, useEffect, useCallback, useRef } from 'react';
 import {
   View,
   Text,
@@ -14,11 +14,15 @@ import {
   Pressable,
   Platform,
   ActivityIndicator,
+  Modal,
+  TouchableOpacity,
+  FlatList,
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 import { Ionicons } from '@expo/vector-icons';
+import { Swipeable } from 'react-native-gesture-handler';
 
 import { Colors, BucketColors } from '@/constants/colors';
 import { FontFamily, FontSize, LetterSpacing } from '@/constants/typography';
@@ -49,6 +53,10 @@ export default function SplitAllocationScreen() {
   // State
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [allocations, setAllocations] = useState<DonutSegment[]>(MOCK_ALLOCATIONS);
+  const [showAddBucket, setShowAddBucket] = useState(false);
+
+  // Swipeable refs to close open rows when adding
+  const swipeableRefs = useRef<Map<string, Swipeable | null>>(new Map());
 
   // Use mock or real data
   const depositAmount = deposit?.amount || MOCK_DEPOSIT_AMOUNT;
@@ -66,6 +74,12 @@ export default function SplitAllocationScreen() {
       setAllocations(bucketAllocations);
     }
   }, [buckets]);
+
+  // Buckets not currently in the allocation
+  const availableBuckets = useMemo(() => {
+    const activeIds = new Set(allocations.map((a) => a.id));
+    return buckets.filter((b) => !activeIds.has(b.id));
+  }, [buckets, allocations]);
 
   // Calculated values
   const totalAllocated = useMemo(() => {
@@ -93,6 +107,38 @@ export default function SplitAllocationScreen() {
     setAllocations(newSegments);
   }, []);
 
+  // Remove a bucket from the current allocation
+  const handleRemove = useCallback((id: string) => {
+    if (Platform.OS !== 'web') {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    }
+    setAllocations((prev) => prev.filter((a) => a.id !== id));
+    swipeableRefs.current.delete(id);
+  }, []);
+
+  // Add a bucket back to the allocation
+  const handleAddBucket = useCallback(
+    (bucketId: string) => {
+      const bucket = buckets.find((b) => b.id === bucketId);
+      if (!bucket) return;
+      if (Platform.OS !== 'web') {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      }
+      const index = buckets.indexOf(bucket);
+      setAllocations((prev) => [
+        ...prev,
+        {
+          id: bucket.id,
+          name: bucket.name,
+          percentage: 10,
+          color: bucket.color || BucketColors[index % BucketColors.length],
+        },
+      ]);
+      setShowAddBucket(false);
+    },
+    [buckets]
+  );
+
   // Handlers
   const handleConfirm = async () => {
     if (Platform.OS !== 'web') {
@@ -101,8 +147,7 @@ export default function SplitAllocationScreen() {
     setIsSubmitting(true);
 
     try {
-      // Create split plan with current allocations
-      const actions = allocations.map(allocation => ({
+      const actions = allocations.map((allocation) => ({
         bucket_id: allocation.id,
         amount: (allocation.percentage / 100) * depositAmount,
       }));
@@ -195,18 +240,52 @@ export default function SplitAllocationScreen() {
             {allocations.map((allocation) => {
               const amount = (allocation.percentage / 100) * depositAmount;
               return (
-                <View key={allocation.id} style={styles.allocationRow}>
-                  <View style={styles.allocationLeft}>
-                    <View style={[styles.colorDot, { backgroundColor: allocation.color }]} />
-                    <Text style={styles.allocationName}>{allocation.name}</Text>
+                <Swipeable
+                  key={allocation.id}
+                  ref={(ref) => {
+                    if (ref) swipeableRefs.current.set(allocation.id, ref);
+                    else swipeableRefs.current.delete(allocation.id);
+                  }}
+                  renderRightActions={() => (
+                    <TouchableOpacity
+                      style={styles.removeAction}
+                      onPress={() => handleRemove(allocation.id)}
+                    >
+                      <Ionicons name="trash-outline" size={20} color="white" />
+                      <Text style={styles.removeActionText}>Remove</Text>
+                    </TouchableOpacity>
+                  )}
+                  overshootRight={false}
+                >
+                  <View style={styles.allocationRow}>
+                    <View style={styles.allocationLeft}>
+                      <View style={[styles.colorDot, { backgroundColor: allocation.color }]} />
+                      <Text style={styles.allocationName}>{allocation.name}</Text>
+                    </View>
+                    <View style={styles.allocationRight}>
+                      <Text style={styles.allocationPercent}>
+                        {Math.round(allocation.percentage)}%
+                      </Text>
+                      <Text style={styles.allocationAmount}>{formatCurrency(amount)}</Text>
+                    </View>
                   </View>
-                  <View style={styles.allocationRight}>
-                    <Text style={styles.allocationPercent}>{Math.round(allocation.percentage)}%</Text>
-                    <Text style={styles.allocationAmount}>{formatCurrency(amount)}</Text>
-                  </View>
-                </View>
+                </Swipeable>
               );
             })}
+
+            {/* Add Bucket Button */}
+            <TouchableOpacity
+              style={styles.addBucketRow}
+              onPress={() => {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                setShowAddBucket(true);
+              }}
+            >
+              <View style={styles.addBucketIcon}>
+                <Ionicons name="add" size={18} color={Colors.primary} />
+              </View>
+              <Text style={styles.addBucketText}>Add Bucket</Text>
+            </TouchableOpacity>
           </View>
         </View>
 
@@ -247,6 +326,63 @@ export default function SplitAllocationScreen() {
           <Text style={styles.secondaryButtonText}>KEEP EVERYTHING IN CHECKING</Text>
         </Pressable>
       </View>
+
+      {/* Add Bucket Bottom Sheet */}
+      <Modal
+        visible={showAddBucket}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setShowAddBucket(false)}
+      >
+        <TouchableOpacity
+          style={styles.modalOverlay}
+          activeOpacity={1}
+          onPress={() => setShowAddBucket(false)}
+        />
+        <View style={[styles.addBucketSheet, { paddingBottom: insets.bottom + 16 }]}>
+          <View style={styles.sheetHandle} />
+          <Text style={styles.sheetTitle}>Add Bucket</Text>
+          <Text style={styles.sheetSubtitle}>
+            Tap a bucket to include it in this split.
+          </Text>
+
+          {availableBuckets.length === 0 ? (
+            <View style={styles.emptySheetContent}>
+              <Ionicons name="checkmark-circle-outline" size={40} color={Colors.text.muted} />
+              <Text style={styles.emptySheetText}>All buckets are already in this split.</Text>
+            </View>
+          ) : (
+            <FlatList
+              data={availableBuckets}
+              keyExtractor={(item) => item.id}
+              scrollEnabled={false}
+              renderItem={({ item, index }) => (
+                <TouchableOpacity
+                  style={styles.bucketPickerRow}
+                  onPress={() => handleAddBucket(item.id)}
+                >
+                  <View
+                    style={[
+                      styles.bucketPickerDot,
+                      { backgroundColor: item.color || BucketColors[index % BucketColors.length] },
+                    ]}
+                  />
+                  <View style={styles.bucketPickerInfo}>
+                    <Text style={styles.bucketPickerName}>{item.name}</Text>
+                    <Text style={styles.bucketPickerSub}>
+                      {item.bucket_type === 'percentage'
+                        ? `${item.allocation_value}% allocation`
+                        : `$${item.allocation_value} fixed`}
+                    </Text>
+                  </View>
+                  <Ionicons name="add-circle-outline" size={24} color={Colors.primary} />
+                </TouchableOpacity>
+              )}
+              ItemSeparatorComponent={() => <View style={styles.bucketPickerDivider} />}
+            />
+          )}
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -376,6 +512,48 @@ const styles = StyleSheet.create({
     color: Colors.text.muted,
   },
 
+  // Swipe remove action
+  removeAction: {
+    backgroundColor: '#EF4444',
+    justifyContent: 'center',
+    alignItems: 'center',
+    width: 80,
+    borderRadius: BorderRadius.xl,
+    flexDirection: 'column',
+    gap: 4,
+    marginLeft: Spacing[2],
+  },
+  removeActionText: {
+    fontFamily: FontFamily.bold,
+    fontSize: FontSize.xs,
+    color: 'white',
+  },
+
+  // Add Bucket row
+  addBucketRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing[3],
+    padding: Spacing[4],
+    borderRadius: BorderRadius.xl,
+    borderWidth: 1.5,
+    borderColor: Colors.border.light,
+    borderStyle: 'dashed',
+  },
+  addBucketIcon: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: `${Colors.primary}15`,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  addBucketText: {
+    fontFamily: FontFamily.bold,
+    fontSize: FontSize.md,
+    color: Colors.primary,
+  },
+
   // Remainder Card
   remainderCard: {
     flexDirection: 'row',
@@ -466,5 +644,80 @@ const styles = StyleSheet.create({
     fontSize: FontSize.xs,
     color: Colors.text.muted,
     letterSpacing: 0.5,
+  },
+
+  // Add Bucket Modal
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.4)',
+  },
+  addBucketSheet: {
+    backgroundColor: Colors.card,
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
+    paddingHorizontal: Spacing.page,
+    paddingTop: Spacing[4],
+    maxHeight: '60%',
+  },
+  sheetHandle: {
+    width: 40,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: Colors.border.light,
+    alignSelf: 'center',
+    marginBottom: Spacing[5],
+  },
+  sheetTitle: {
+    fontFamily: FontFamily.black,
+    fontSize: FontSize.xl,
+    color: Colors.text.primary,
+    marginBottom: Spacing[1],
+  },
+  sheetSubtitle: {
+    fontFamily: FontFamily.medium,
+    fontSize: FontSize.sm,
+    color: Colors.text.muted,
+    marginBottom: Spacing[5],
+  },
+  emptySheetContent: {
+    alignItems: 'center',
+    paddingVertical: Spacing[8],
+    gap: Spacing[3],
+  },
+  emptySheetText: {
+    fontFamily: FontFamily.medium,
+    fontSize: FontSize.md,
+    color: Colors.text.muted,
+    textAlign: 'center',
+  },
+  bucketPickerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: Spacing[4],
+    gap: Spacing[4],
+  },
+  bucketPickerDot: {
+    width: 14,
+    height: 14,
+    borderRadius: 7,
+    flexShrink: 0,
+  },
+  bucketPickerInfo: {
+    flex: 1,
+  },
+  bucketPickerName: {
+    fontFamily: FontFamily.bold,
+    fontSize: FontSize.md,
+    color: Colors.text.primary,
+  },
+  bucketPickerSub: {
+    fontFamily: FontFamily.medium,
+    fontSize: FontSize.sm,
+    color: Colors.text.muted,
+    marginTop: 2,
+  },
+  bucketPickerDivider: {
+    height: 1,
+    backgroundColor: Colors.border.subtle,
   },
 });

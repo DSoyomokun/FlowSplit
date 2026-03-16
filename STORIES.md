@@ -292,6 +292,31 @@ Complete breakdown of all work required to ship FlowSplit.
   - Edit bucket (name, percentage, destination)
   - Delete bucket
 
+- [x] **STORY-057a**: Create bucket creation screen (`app/buckets/new.tsx`)
+  - Name input with focus ring
+  - 8-color palette picker with selected ring + checkmark
+  - Segmented control: Percentage / Fixed Amount
+  - Prefixed value input (% or $)
+  - Delivery method selection: Internal Transfer / External Link (color-matched)
+  - Save: POST /buckets → PATCH /buckets/{id} for delivery type
+  - Form validation gates Save button
+  - Wired from "Add Bucket" and "Create first bucket" on configure screen
+
+- [x] **STORY-057b**: Add delivery method modal to configure screen
+  - Tapping a bucket's destination row opens a bottom-sheet modal
+  - Bucket with no destination shows dashed "Set delivery method" row (BucketConfigCard updated)
+  - Toggle: Internal Transfer vs External Link
+  - External Link shows Display Name + URL inputs
+  - Save calls PATCH /buckets/{id} with destination_type, external_url, external_name
+  - configure.tsx now uses real useBuckets() data instead of mock data
+
+- [x] **STORY-057c**: Swipe-to-remove and add-bucket on allocate screen
+  - Each allocation row wrapped in Swipeable (react-native-gesture-handler)
+  - Swipe left reveals red "Remove" action — removes from split without deleting bucket
+  - "Add Bucket" dashed button at bottom of allocation list
+  - Tapping opens a bottom-sheet Modal showing buckets not in current split
+  - Tap a bucket to add it back at 10% default
+
 ### 4.4 Confirmation Screen
 - [x] **STORY-058**: Create confirmation screen layout
   - Review title
@@ -586,14 +611,14 @@ Complete breakdown of all work required to ship FlowSplit.
 | 1. Project Foundation | 11 | 11 | 0 | P0 |
 | 2. Design System | 17 | 17 | 0 | P0 |
 | 3. Feature Components | 17 | 17 | 0 | P0 |
-| 4. Screen Implementation | 22 | 22 | 0 | P0 |
+| 4. Screen Implementation | 25 | 25 | 0 | P0 |
 | 5. Navigation & Flow | 4 | 3 | 1 | P0 |
 | 6. State Management | 5 | 5 | 0 | P0 |
 | 7. Backend Completion | 8 | 6 | 2 | P1 |
 | 8. Polish & UX | 6 | 1 | 5 | P2 |
 | 9. Testing | 7 | 0 | 7 | P2 |
 | 10. Deployment | 5 | 0 | 5 | P1 |
-| **TOTAL** | **102** | **82** | **20** | |
+| **TOTAL** | **105** | **85** | **20** | |
 
 
 ---

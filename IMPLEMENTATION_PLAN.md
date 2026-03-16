@@ -1098,7 +1098,9 @@ All screens need to handle multiple states. Below are specifications extracted f
 - [x] `app/deposit/[id]/confirm.tsx` - Confirmation
 - [x] `app/deposit/[id]/complete.tsx` - Success
 - [x] `app/deposit/[id]/processing.tsx` - Processing/retry
-- [x] `app/buckets/configure.tsx` - Bucket configuration
+- [x] `app/buckets/configure.tsx` - Bucket configuration (uses real useBuckets() data; delivery method modal; "Add Bucket" navigates to new.tsx)
+- [x] `app/buckets/new.tsx` - Bucket creation screen (name, color picker, allocation rule, delivery method; POST + PATCH on save)
+- [x] `app/deposit/[id]/allocate.tsx` - Swipe-to-remove on allocation rows; Add Bucket bottom sheet
 - [x] `app/split-plan/[id].tsx` - Split plan detail
 
 ### Hooks
@@ -1135,6 +1137,7 @@ All screens need to handle multiple states. Below are specifications extracted f
 ### Phase 5: Screens (Happy Path) - COMPLETE
 - [x] Dashboard, Deposit Setup, Split Allocation, Confirmation, Complete, Processing
 - [x] Bucket Configuration, Split History, Auth screens
+- [x] Bucket Creation (`buckets/new.tsx`) — name, color picker, allocation rule, delivery method
 
 ### Phase 6: State Integration - COMPLETE
 - [x] Loading states (Skeleton component exists)
@@ -1149,8 +1152,13 @@ All screens need to handle multiple states. Below are specifications extracted f
 - [x] DonutChart drag handles crash on interaction - FIXED
 - [x] DonutChart circular rendering - FIXED
 - [x] Backend business logic (allocation service, split execution, notifications)
-- [ ] Backend API integration (screens use mock data for fallback)
+- [x] Bucket configure screen wired to real API (no more mock data)
+- [x] BucketConfigCard shows "Set delivery method" row when destination_type is null
+- [x] Delivery method modal on configure screen (Internal Transfer / External Link)
+- [x] Swipe-to-remove + Add Bucket sheet on allocate screen
+- [ ] Backend API integration (allocate/confirm screens use mock data for fallback)
 - [ ] Split history screen needs real data
+- [ ] Bucket edit screen (currently only create; ⋯ menu on BucketConfigCard is TODO)
 
 ---
 

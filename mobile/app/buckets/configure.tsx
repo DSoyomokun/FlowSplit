@@ -5,17 +5,25 @@
  * Stories: 53, 54, 55, 56, 57
  */
 
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback } from 'react';
 import {
   View,
   Text,
   StyleSheet,
   ScrollView,
   RefreshControl,
+  Modal,
+  TextInput,
+  Switch,
+  TouchableOpacity,
+  KeyboardAvoidingView,
+  Platform,
+  ActivityIndicator,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
+import { Ionicons } from '@expo/vector-icons';
 
 import { Colors, BucketColors } from '@/constants/colors';
 import { FontFamily, FontSize } from '@/constants/typography';
@@ -32,54 +40,7 @@ import {
   EmptyBuckets,
 } from '@/components';
 import { useBuckets } from '@/hooks';
-
-// Mock buckets for development
-const MOCK_BUCKETS = [
-  {
-    id: '1',
-    name: 'Tithe',
-    percentage: 10,
-    color: BucketColors[0],
-    icon: 'tithe',
-    destination: {
-      name: 'Giving.com / FaithChurch',
-      type: 'external' as const,
-    },
-  },
-  {
-    id: '2',
-    name: 'Savings',
-    percentage: 15,
-    color: BucketColors[1],
-    icon: 'savings',
-    destination: {
-      name: 'Ally Bank',
-      type: 'bank' as const,
-      lastFour: '9928',
-    },
-  },
-  {
-    id: '3',
-    name: 'Investing',
-    percentage: 10,
-    color: BucketColors[2],
-    icon: 'investing',
-    destination: {
-      name: 'Wealthfront IRA',
-      type: 'bank' as const,
-      lastFour: '1104',
-    },
-  },
-];
-
-// Simulated bucket with error for demo
-const MOCK_BUCKET_WITH_ERROR = {
-  ...MOCK_BUCKETS[1],
-  error: {
-    title: 'Connection Issue',
-    description: 'Destination account unavailable. Please reconnect.',
-  },
-};
+import type { Bucket } from '@/types';
 
 interface BucketConfig {
   id: string;
@@ -98,87 +59,102 @@ interface BucketConfig {
   };
 }
 
+function mapBucket(bucket: Bucket, index: number): BucketConfig {
+  return {
+    id: bucket.id,
+    name: bucket.name,
+    percentage: bucket.bucket_type === 'percentage' ? bucket.allocation_value : 10,
+    color: bucket.color || BucketColors[index % BucketColors.length],
+    icon: bucket.emoji || undefined,
+    destination:
+      bucket.destination_type === 'external_link'
+        ? { name: bucket.external_name || 'External Link', type: 'external' as const }
+        : bucket.destination_type === 'internal_transfer'
+        ? { name: 'Internal Transfer', type: 'bank' as const }
+        : undefined,
+  };
+}
+
 export default function BucketConfigurationScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-
-  // State
-  const [isLoading, setIsLoading] = useState(true);
+  const { buckets: rawBuckets, isLoading, refetch, updateBucket } = useBuckets();
   const [isRefreshing, setIsRefreshing] = useState(false);
-  const [buckets, setBuckets] = useState<BucketConfig[]>([]);
-  const [showError, setShowError] = useState(false); // Toggle to demo error state
 
-  // Simulate data loading
-  useEffect(() => {
-    const loadBuckets = async () => {
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1500));
+  // Delivery method modal state
+  const [editingBucketId, setEditingBucketId] = useState<string | null>(null);
+  const [deliveryType, setDeliveryType] = useState<'internal_transfer' | 'external_link'>('external_link');
+  const [externalUrl, setExternalUrl] = useState('');
+  const [externalName, setExternalName] = useState('');
+  const [isSaving, setIsSaving] = useState(false);
 
-      // Set mock data (toggle showError to see error state)
-      if (showError) {
-        setBuckets([
-          MOCK_BUCKETS[0],
-          MOCK_BUCKET_WITH_ERROR,
-          MOCK_BUCKETS[2],
-        ]);
-      } else {
-        setBuckets(MOCK_BUCKETS);
-      }
-      setIsLoading(false);
-    };
-
-    loadBuckets();
-  }, [showError]);
+  const buckets: BucketConfig[] = rawBuckets.map(mapBucket);
 
   const handleRefresh = async () => {
     setIsRefreshing(true);
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-
-    // Simulate refresh
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-
+    await refetch();
     setIsRefreshing(false);
   };
 
   const handleBucketPress = (id: string) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     // TODO: Navigate to edit bucket screen
-    console.log('Edit bucket:', id);
   };
 
   const handleMorePress = (id: string) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     // TODO: Show action sheet (edit, delete)
-    console.log('More options for bucket:', id);
   };
 
   const handleDestinationPress = (id: string) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    // TODO: Navigate to destination settings
-    console.log('Edit destination for bucket:', id);
+    const bucket = rawBuckets.find((b) => b.id === id);
+    if (bucket) {
+      setEditingBucketId(id);
+      setDeliveryType(
+        bucket.destination_type === 'external_link' ? 'external_link' : 'internal_transfer'
+      );
+      setExternalUrl(bucket.external_url || '');
+      setExternalName(bucket.external_name || '');
+    }
   };
 
   const handleReconnect = (id: string) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     // TODO: Initiate reconnection flow
-    console.log('Reconnect bucket:', id);
   };
 
   const handleAddBucket = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    // TODO: Navigate to add bucket screen
-    console.log('Add new bucket');
+    router.push('/buckets/new');
   };
 
   const handleCreateFirstBucket = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    // TODO: Navigate to add bucket screen
-    console.log('Create first bucket');
+    router.push('/buckets/new');
   };
 
   const handleContinue = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     router.back();
+  };
+
+  const handleSaveDelivery = async () => {
+    if (!editingBucketId) return;
+    setIsSaving(true);
+    try {
+      await updateBucket(editingBucketId, {
+        destination_type: deliveryType,
+        external_url: deliveryType === 'external_link' ? externalUrl : null,
+        external_name: deliveryType === 'external_link' ? externalName : null,
+      });
+      setEditingBucketId(null);
+    } catch (err) {
+      console.error('Failed to save delivery method:', err);
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const hasErrors = buckets.some((b) => b.error);
@@ -197,19 +173,15 @@ export default function BucketConfigurationScreen() {
             { paddingBottom: Size.bottomBarHeight + insets.bottom + Spacing[8] },
           ]}
         >
-          {/* Title */}
           <View style={styles.titleSection}>
             <Text style={styles.title}>Configure{'\n'}Destination Buckets</Text>
             <Skeleton width={200} height={14} style={styles.subtitleSkeleton} />
           </View>
 
-          {/* Skeleton Bucket Cards */}
           <View style={styles.bucketList}>
             {[1, 2, 3].map((i) => (
               <SkeletonCard key={i} />
             ))}
-
-            {/* Disabled Add Button */}
             <View style={{ opacity: 0.5 }}>
               <AddBucketButton onPress={() => {}} />
             </View>
@@ -245,7 +217,6 @@ export default function BucketConfigurationScreen() {
             <RefreshControl refreshing={isRefreshing} onRefresh={handleRefresh} />
           }
         >
-          {/* Title */}
           <View style={styles.titleSection}>
             <Text style={styles.title}>Configure{'\n'}Destination Buckets</Text>
             <Text style={styles.subtitle}>
@@ -253,7 +224,6 @@ export default function BucketConfigurationScreen() {
             </Text>
           </View>
 
-          {/* Empty State */}
           <View style={styles.emptyState}>
             <EmptyBuckets onCreateBucket={handleCreateFirstBucket} />
           </View>
@@ -269,7 +239,7 @@ export default function BucketConfigurationScreen() {
     );
   }
 
-  // Normal State (with possible errors)
+  // Normal State
   return (
     <View style={styles.container}>
       <Header showBack />
@@ -285,7 +255,6 @@ export default function BucketConfigurationScreen() {
         }
         showsVerticalScrollIndicator={false}
       >
-        {/* Title Section */}
         <View style={styles.titleSection}>
           <Text style={styles.title}>Configure{'\n'}Destination Buckets</Text>
           <Text style={styles.subtitle}>
@@ -293,7 +262,6 @@ export default function BucketConfigurationScreen() {
           </Text>
         </View>
 
-        {/* Bucket Cards */}
         <View style={styles.bucketList}>
           {buckets.map((bucket) => (
             <BucketConfigCard
@@ -318,12 +286,10 @@ export default function BucketConfigurationScreen() {
             />
           ))}
 
-          {/* Add Bucket Button */}
           <AddBucketButton onPress={handleAddBucket} />
         </View>
       </ScrollView>
 
-      {/* Bottom Action Bar */}
       <BottomActionBar>
         <Button onPress={handleContinue} variant={hasErrors ? 'secondary' : 'primary'}>
           Continue to Confirmation
@@ -332,6 +298,121 @@ export default function BucketConfigurationScreen() {
           Changes will apply to the current $1,200 split.
         </Text>
       </BottomActionBar>
+
+      {/* Delivery Method Modal */}
+      <Modal
+        visible={editingBucketId !== null}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setEditingBucketId(null)}
+      >
+        <TouchableOpacity
+          style={styles.modalOverlay}
+          activeOpacity={1}
+          onPress={() => setEditingBucketId(null)}
+        />
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+          style={styles.modalSheet}
+        >
+          {/* Handle */}
+          <View style={styles.sheetHandle} />
+
+          <Text style={styles.sheetTitle}>Delivery Method</Text>
+          <Text style={styles.sheetSubtitle}>
+            Choose how funds are sent when this bucket is filled.
+          </Text>
+
+          {/* Toggle row */}
+          <View style={styles.toggleRow}>
+            <TouchableOpacity
+              style={[
+                styles.toggleOption,
+                deliveryType === 'internal_transfer' && styles.toggleOptionActive,
+              ]}
+              onPress={() => setDeliveryType('internal_transfer')}
+            >
+              <Ionicons
+                name="swap-horizontal-outline"
+                size={20}
+                color={deliveryType === 'internal_transfer' ? Colors.primary : Colors.text.muted}
+              />
+              <Text
+                style={[
+                  styles.toggleOptionText,
+                  deliveryType === 'internal_transfer' && styles.toggleOptionTextActive,
+                ]}
+              >
+                Internal Transfer
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[
+                styles.toggleOption,
+                deliveryType === 'external_link' && styles.toggleOptionActive,
+              ]}
+              onPress={() => setDeliveryType('external_link')}
+            >
+              <Ionicons
+                name="link-outline"
+                size={20}
+                color={deliveryType === 'external_link' ? Colors.primary : Colors.text.muted}
+              />
+              <Text
+                style={[
+                  styles.toggleOptionText,
+                  deliveryType === 'external_link' && styles.toggleOptionTextActive,
+                ]}
+              >
+                External Link
+              </Text>
+            </TouchableOpacity>
+          </View>
+
+          {deliveryType === 'external_link' && (
+            <View style={styles.externalFields}>
+              <View style={styles.fieldGroup}>
+                <Text style={styles.fieldLabel}>Display Name</Text>
+                <TextInput
+                  style={styles.textInput}
+                  value={externalName}
+                  onChangeText={setExternalName}
+                  placeholder="e.g. Pushpay / FaithChurch"
+                  placeholderTextColor={Colors.text.muted}
+                  autoCorrect={false}
+                />
+              </View>
+
+              <View style={styles.fieldGroup}>
+                <Text style={styles.fieldLabel}>Destination URL</Text>
+                <TextInput
+                  style={styles.textInput}
+                  value={externalUrl}
+                  onChangeText={setExternalUrl}
+                  placeholder="https://pushpay.com/g/your-org"
+                  placeholderTextColor={Colors.text.muted}
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                  keyboardType="url"
+                />
+              </View>
+            </View>
+          )}
+
+          <TouchableOpacity
+            style={[styles.saveButton, isSaving && { opacity: 0.7 }]}
+            onPress={handleSaveDelivery}
+            disabled={isSaving}
+          >
+            {isSaving ? (
+              <ActivityIndicator color="white" />
+            ) : (
+              <Text style={styles.saveButtonText}>Save Delivery Method</Text>
+            )}
+          </TouchableOpacity>
+        </KeyboardAvoidingView>
+      </Modal>
     </View>
   );
 }
@@ -381,5 +462,109 @@ const styles = StyleSheet.create({
     fontSize: FontSize.sm,
     color: Colors.text.muted,
     textAlign: 'center',
+  },
+
+  // Delivery Method Modal
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.4)',
+  },
+  modalSheet: {
+    backgroundColor: Colors.card,
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
+    paddingHorizontal: Spacing.page,
+    paddingBottom: 40,
+    paddingTop: Spacing[4],
+  },
+  sheetHandle: {
+    width: 40,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: Colors.border.light,
+    alignSelf: 'center',
+    marginBottom: Spacing[5],
+  },
+  sheetTitle: {
+    fontFamily: FontFamily.black,
+    fontSize: FontSize.xl,
+    color: Colors.text.primary,
+    marginBottom: Spacing[1],
+  },
+  sheetSubtitle: {
+    fontFamily: FontFamily.medium,
+    fontSize: FontSize.sm,
+    color: Colors.text.muted,
+    marginBottom: Spacing[6],
+  },
+
+  // Toggle
+  toggleRow: {
+    flexDirection: 'row',
+    gap: Spacing[3],
+    marginBottom: Spacing[6],
+  },
+  toggleOption: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: Spacing[2],
+    paddingVertical: Spacing[3],
+    borderRadius: BorderRadius.xl,
+    borderWidth: 1.5,
+    borderColor: Colors.border.light,
+    backgroundColor: Colors.background,
+  },
+  toggleOptionActive: {
+    borderColor: Colors.primary,
+    backgroundColor: `${Colors.primary}10`,
+  },
+  toggleOptionText: {
+    fontFamily: FontFamily.bold,
+    fontSize: FontSize.sm,
+    color: Colors.text.muted,
+  },
+  toggleOptionTextActive: {
+    color: Colors.primary,
+  },
+
+  // External fields
+  externalFields: {
+    gap: Spacing[4],
+    marginBottom: Spacing[6],
+  },
+  fieldGroup: {
+    gap: Spacing[2],
+  },
+  fieldLabel: {
+    fontFamily: FontFamily.bold,
+    fontSize: FontSize.sm,
+    color: Colors.text.secondary,
+  },
+  textInput: {
+    backgroundColor: Colors.background,
+    borderWidth: 1.5,
+    borderColor: Colors.border.light,
+    borderRadius: BorderRadius.xl,
+    paddingHorizontal: Spacing[4],
+    paddingVertical: Spacing[4],
+    fontFamily: FontFamily.medium,
+    fontSize: FontSize.md,
+    color: Colors.text.primary,
+  },
+
+  // Save button
+  saveButton: {
+    backgroundColor: Colors.primary,
+    borderRadius: BorderRadius.xl,
+    height: 56,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  saveButtonText: {
+    fontFamily: FontFamily.bold,
+    fontSize: FontSize.md,
+    color: 'white',
   },
 });

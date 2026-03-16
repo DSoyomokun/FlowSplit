@@ -138,7 +138,7 @@ export function BucketConfigCard({
       </View>
 
       {/* Destination Row */}
-      {destination && (
+      {destination ? (
         <Pressable
           onPress={() => onDestinationPress?.(id)}
           style={[styles.destination, error && styles.destinationError]}
@@ -160,7 +160,18 @@ export function BucketConfigCard({
             color={error ? Colors.error.text : Colors.text.light}
           />
         </Pressable>
-      )}
+      ) : onDestinationPress ? (
+        <Pressable
+          onPress={() => onDestinationPress(id)}
+          style={styles.destinationEmpty}
+        >
+          <View style={styles.destinationLeft}>
+            <Ionicons name="add-circle-outline" size={16} color={Colors.primary} />
+            <Text style={styles.destinationEmptyText}>Set delivery method</Text>
+          </View>
+          <Ionicons name="chevron-forward" size={16} color={Colors.text.light} />
+        </Pressable>
+      ) : null}
     </View>
   );
 
@@ -245,6 +256,22 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.error.bg,
     borderWidth: 1,
     borderColor: Colors.error.border,
+  },
+  destinationEmpty: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: `${Colors.primary}08`,
+    borderRadius: BorderRadius.lg,
+    padding: Spacing[3],
+    borderWidth: 1,
+    borderColor: `${Colors.primary}20`,
+    borderStyle: 'dashed',
+  },
+  destinationEmptyText: {
+    fontFamily: FontFamily.medium,
+    fontSize: FontSize.md,
+    color: Colors.primary,
   },
   destinationLeft: {
     flexDirection: 'row',
