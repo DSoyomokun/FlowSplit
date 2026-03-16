@@ -1,73 +1,23 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useState } from 'react';
 import {
   Alert,
-  Modal,
   Pressable,
   RefreshControl,
   ScrollView,
   StyleSheet,
   Text,
-  TextInput,
   View,
 } from 'react-native';
+import { useRouter } from 'expo-router';
 import { useBuckets } from '@/hooks';
-import { BucketColors } from '@/constants';
 
 export default function BucketsScreen() {
-  const { buckets, isLoading, refetch, createBucket, deleteBucket } = useBuckets();
-  const [modalVisible, setModalVisible] = useState(false);
-  const [name, setName] = useState('');
-  const [emoji, setEmoji] = useState('');
-  const [allocationType, setAllocationType] = useState<'percentage' | 'fixed'>('percentage');
-  const [allocationValue, setAllocationValue] = useState('');
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const router = useRouter();
+  const { buckets, isLoading, refetch, deleteBucket } = useBuckets();
 
   const totalPercentage = buckets
     .filter((b) => b.bucket_type === 'percentage')
     .reduce((sum, b) => sum + b.allocation_value, 0);
-
-  async function handleCreate() {
-    if (!name.trim() || !allocationValue) {
-      Alert.alert('Error', 'Please fill in all required fields');
-      return;
-    }
-
-    const value = parseFloat(allocationValue);
-    if (isNaN(value) || value <= 0) {
-      Alert.alert('Error', 'Please enter a valid allocation value');
-      return;
-    }
-
-    if (allocationType === 'percentage' && totalPercentage + value > 100) {
-      Alert.alert('Error', `Total percentage would exceed 100% (currently ${totalPercentage}%)`);
-      return;
-    }
-
-    try {
-      setIsSubmitting(true);
-      await createBucket({
-        name: name.trim(),
-        emoji: emoji || undefined,
-        color: BucketColors[buckets.length % BucketColors.length],
-        bucket_type: allocationType,
-        allocation_value: value,
-      });
-      setModalVisible(false);
-      resetForm();
-    } catch (error) {
-      Alert.alert('Error', error instanceof Error ? error.message : 'Failed to create bucket');
-    } finally {
-      setIsSubmitting(false);
-    }
-  }
-
-  function resetForm() {
-    setName('');
-    setEmoji('');
-    setAllocationType('percentage');
-    setAllocationValue('');
-  }
 
   function handleDelete(id: string, bucketName: string) {
     Alert.alert(
@@ -137,101 +87,9 @@ export default function BucketsScreen() {
         )}
       </ScrollView>
 
-      <Pressable style={styles.fab} onPress={() => setModalVisible(true)}>
+      <Pressable style={styles.fab} onPress={() => router.push('/buckets/new')}>
         <Ionicons name="add" size={28} color="#fff" />
       </Pressable>
-
-      <Modal
-        visible={modalVisible}
-        animationType="slide"
-        presentationStyle="pageSheet"
-        onRequestClose={() => setModalVisible(false)}
-      >
-        <View style={styles.modal}>
-          <View style={styles.modalHeader}>
-            <Pressable onPress={() => setModalVisible(false)}>
-              <Text style={styles.cancelText}>Cancel</Text>
-            </Pressable>
-            <Text style={styles.modalTitle}>New Bucket</Text>
-            <Pressable onPress={handleCreate} disabled={isSubmitting}>
-              <Text style={[styles.saveText, isSubmitting && styles.disabled]}>
-                {isSubmitting ? 'Saving...' : 'Save'}
-              </Text>
-            </Pressable>
-          </View>
-
-          <ScrollView style={styles.modalContent}>
-            <Text style={styles.label}>Name *</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="e.g., Emergency Fund"
-              value={name}
-              onChangeText={setName}
-            />
-
-            <Text style={styles.label}>Emoji (optional)</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="e.g., 🏦"
-              value={emoji}
-              onChangeText={setEmoji}
-              maxLength={2}
-            />
-
-            <Text style={styles.label}>Allocation Type</Text>
-            <View style={styles.segmentedControl}>
-              <Pressable
-                style={[
-                  styles.segment,
-                  allocationType === 'percentage' && styles.segmentActive,
-                ]}
-                onPress={() => setAllocationType('percentage')}
-              >
-                <Text
-                  style={[
-                    styles.segmentText,
-                    allocationType === 'percentage' && styles.segmentTextActive,
-                  ]}
-                >
-                  Percentage
-                </Text>
-              </Pressable>
-              <Pressable
-                style={[
-                  styles.segment,
-                  allocationType === 'fixed' && styles.segmentActive,
-                ]}
-                onPress={() => setAllocationType('fixed')}
-              >
-                <Text
-                  style={[
-                    styles.segmentText,
-                    allocationType === 'fixed' && styles.segmentTextActive,
-                  ]}
-                >
-                  Fixed Amount
-                </Text>
-              </Pressable>
-            </View>
-
-            <Text style={styles.label}>
-              {allocationType === 'percentage' ? 'Percentage *' : 'Amount *'}
-            </Text>
-            <TextInput
-              style={styles.input}
-              placeholder={allocationType === 'percentage' ? 'e.g., 20' : 'e.g., 100'}
-              value={allocationValue}
-              onChangeText={setAllocationValue}
-              keyboardType="decimal-pad"
-            />
-            {allocationType === 'percentage' && (
-              <Text style={styles.hint}>
-                {100 - totalPercentage}% remaining to allocate
-              </Text>
-            )}
-          </ScrollView>
-        </View>
-      </Modal>
     </View>
   );
 }
@@ -320,7 +178,7 @@ const styles = StyleSheet.create({
     width: 56,
     height: 56,
     borderRadius: 28,
-    backgroundColor: '#0a7ea4',
+    backgroundColor: '#0EA5A5',
     justifyContent: 'center',
     alignItems: 'center',
     shadowColor: '#000',
@@ -328,77 +186,5 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.25,
     shadowRadius: 4,
     elevation: 5,
-  },
-  modal: {
-    flex: 1,
-    backgroundColor: '#fff',
-  },
-  modalHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#eee',
-  },
-  modalTitle: {
-    fontSize: 17,
-    fontWeight: '600',
-  },
-  cancelText: {
-    color: '#666',
-    fontSize: 16,
-  },
-  saveText: {
-    color: '#0a7ea4',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  disabled: {
-    opacity: 0.5,
-  },
-  modalContent: {
-    padding: 16,
-  },
-  label: {
-    fontSize: 14,
-    fontWeight: '500',
-    marginBottom: 8,
-    marginTop: 16,
-  },
-  input: {
-    borderWidth: 1,
-    borderColor: '#ddd',
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    fontSize: 16,
-  },
-  hint: {
-    fontSize: 12,
-    color: '#666',
-    marginTop: 4,
-  },
-  segmentedControl: {
-    flexDirection: 'row',
-    backgroundColor: '#f0f0f0',
-    borderRadius: 8,
-    padding: 4,
-  },
-  segment: {
-    flex: 1,
-    paddingVertical: 10,
-    alignItems: 'center',
-    borderRadius: 6,
-  },
-  segmentActive: {
-    backgroundColor: '#fff',
-  },
-  segmentText: {
-    color: '#666',
-  },
-  segmentTextActive: {
-    color: '#000',
-    fontWeight: '500',
   },
 });
