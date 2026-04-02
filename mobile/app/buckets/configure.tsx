@@ -104,7 +104,7 @@ export default function BucketConfigurationScreen() {
 
   const handleMorePress = (id: string) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    // TODO: Show action sheet (edit, delete)
+    router.push(`/buckets/${id}`);
   };
 
   const handleDestinationPress = (id: string) => {

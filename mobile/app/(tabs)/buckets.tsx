@@ -1,95 +1,165 @@
-import { Ionicons } from '@expo/vector-icons';
+/**
+ * Buckets Tab
+ * Manage all allocation buckets — tap ⋯ to edit, FAB to create new
+ */
+
+import React from 'react';
 import {
-  Alert,
-  Pressable,
-  RefreshControl,
-  ScrollView,
-  StyleSheet,
-  Text,
   View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  RefreshControl,
+  Pressable,
+  ActivityIndicator,
 } from 'react-native';
 import { useRouter } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import * as Haptics from 'expo-haptics';
+import { Ionicons } from '@expo/vector-icons';
+
+import { Colors, BucketColors } from '@/constants/colors';
+import { FontFamily, FontSize, LetterSpacing } from '@/constants/typography';
+import { BorderRadius, Spacing } from '@/constants/spacing';
+import { Shadows } from '@/constants/shadows';
+import { BucketConfigCard, FloatingActionButton } from '@/components';
 import { useBuckets } from '@/hooks';
+import type { Bucket } from '@/types';
+
+function mapDestination(bucket: Bucket) {
+  if (bucket.destination_type === 'external_link') {
+    return { name: bucket.external_name || 'External Link', type: 'external' as const };
+  }
+  if (bucket.destination_type === 'internal_transfer') {
+    return { name: 'Internal Transfer', type: 'bank' as const };
+  }
+  return undefined;
+}
 
 export default function BucketsScreen() {
   const router = useRouter();
-  const { buckets, isLoading, refetch, deleteBucket } = useBuckets();
+  const insets = useSafeAreaInsets();
+  const { buckets, isLoading, refetch } = useBuckets();
 
-  const totalPercentage = buckets
+  const totalAllocated = buckets
     .filter((b) => b.bucket_type === 'percentage')
     .reduce((sum, b) => sum + b.allocation_value, 0);
 
-  function handleDelete(id: string, bucketName: string) {
-    Alert.alert(
-      'Delete Bucket',
-      `Are you sure you want to delete "${bucketName}"?`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Delete',
-          style: 'destructive',
-          onPress: () => deleteBucket(id),
-        },
-      ]
+  const remaining = Math.max(0, 100 - totalAllocated);
+
+  function handleEdit(id: string) {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    router.push(`/buckets/${id}`);
+  }
+
+  function handleAdd() {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    router.push('/buckets/new');
+  }
+
+  if (isLoading && buckets.length === 0) {
+    return (
+      <View style={[styles.container, { paddingTop: insets.top }]}>
+        <View style={styles.header}>
+          <Text style={styles.headerTitle}>My Buckets</Text>
+        </View>
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator color={Colors.primary} />
+        </View>
+      </View>
     );
   }
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { paddingTop: insets.top }]}>
+      {/* Header */}
+      <View style={styles.header}>
+        <Text style={styles.headerTitle}>My Buckets</Text>
+        <Pressable
+          style={styles.configureButton}
+          onPress={() => router.push('/buckets/configure')}
+          hitSlop={8}
+        >
+          <Ionicons name="settings-outline" size={20} color={Colors.text.secondary} />
+        </Pressable>
+      </View>
+
       <ScrollView
-        contentContainerStyle={styles.content}
+        style={styles.scroll}
+        contentContainerStyle={[
+          styles.scrollContent,
+          { paddingBottom: insets.bottom + 100 },
+        ]}
+        showsVerticalScrollIndicator={false}
         refreshControl={
-          <RefreshControl refreshing={isLoading} onRefresh={refetch} />
+          <RefreshControl
+            refreshing={isLoading}
+            onRefresh={refetch}
+            tintColor={Colors.primary}
+          />
         }
       >
-        <View style={styles.summary}>
-          <Text style={styles.summaryText}>
-            {totalPercentage}% allocated ({100 - totalPercentage}% remaining)
-          </Text>
-        </View>
-
-        {buckets.map((bucket) => (
-          <View key={bucket.id} style={styles.bucketCard}>
-            <View style={styles.bucketHeader}>
-              <Text style={styles.bucketEmoji}>{bucket.emoji || '💰'}</Text>
-              <View style={styles.bucketInfo}>
-                <Text style={styles.bucketName}>{bucket.name}</Text>
-                <Text style={styles.bucketAllocation}>
-                  {bucket.bucket_type === 'percentage'
-                    ? `${bucket.allocation_value}% of deposits`
-                    : `$${bucket.allocation_value} per deposit`}
-                </Text>
-              </View>
-              <Pressable
-                style={styles.deleteButton}
-                onPress={() => handleDelete(bucket.id, bucket.name)}
-              >
-                <Ionicons name="trash-outline" size={20} color="#EF4444" />
-              </Pressable>
+        {/* Allocation summary pill */}
+        {buckets.length > 0 && (
+          <View style={styles.summaryRow}>
+            <View style={styles.summaryPill}>
+              <View style={[styles.summaryDot, { backgroundColor: Colors.primary }]} />
+              <Text style={styles.summaryText}>
+                <Text style={styles.summaryBold}>{Math.round(totalAllocated)}%</Text>
+                {' '}allocated
+              </Text>
             </View>
-            <View style={styles.bucketFooter}>
-              <Text style={styles.balanceLabel}>Current Balance</Text>
-              <Text style={styles.balanceAmount}>
-                ${bucket.current_balance.toFixed(2)}
+            <View style={styles.summaryPill}>
+              <View style={[styles.summaryDot, { backgroundColor: Colors.gray[300] }]} />
+              <Text style={styles.summaryText}>
+                <Text style={styles.summaryBold}>{Math.round(remaining)}%</Text>
+                {' '}to checking
               </Text>
             </View>
           </View>
-        ))}
+        )}
 
-        {buckets.length === 0 && !isLoading && (
-          <View style={styles.emptyState}>
-            <Ionicons name="pie-chart-outline" size={64} color="#ccc" />
+        {/* Bucket list */}
+        {buckets.length === 0 ? (
+          <View style={styles.emptyContainer}>
+            <View style={styles.emptyIconBox}>
+              <Ionicons name="pie-chart-outline" size={40} color={`${Colors.primary}30`} />
+            </View>
             <Text style={styles.emptyTitle}>No buckets yet</Text>
             <Text style={styles.emptyText}>
-              Create buckets to automatically split your deposits
+              Create your first bucket to start automatically splitting deposits.
             </Text>
+            <Pressable
+              style={({ pressed }) => [styles.createButton, pressed && { opacity: 0.85 }]}
+              onPress={handleAdd}
+            >
+              <Ionicons name="add" size={18} color="white" />
+              <Text style={styles.createButtonText}>Create First Bucket</Text>
+            </Pressable>
+          </View>
+        ) : (
+          <View style={styles.bucketList}>
+            {buckets.map((bucket, index) => (
+              <BucketConfigCard
+                key={bucket.id}
+                id={bucket.id}
+                name={bucket.name}
+                percentage={
+                  bucket.bucket_type === 'percentage' ? bucket.allocation_value : 0
+                }
+                color={bucket.color || BucketColors[index % BucketColors.length]}
+                icon={bucket.emoji || undefined}
+                destination={mapDestination(bucket)}
+                onMorePress={handleEdit}
+              />
+            ))}
           </View>
         )}
       </ScrollView>
 
-      <Pressable style={styles.fab} onPress={() => router.push('/buckets/new')}>
-        <Ionicons name="add" size={28} color="#fff" />
-      </Pressable>
+      {buckets.length > 0 && (
+        <FloatingActionButton onPress={handleAdd} />
+      )}
     </View>
   );
 }
@@ -97,94 +167,130 @@ export default function BucketsScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: Colors.background,
   },
-  content: {
-    padding: 16,
-    paddingBottom: 100,
+  loadingContainer: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  summary: {
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 16,
-  },
-  summaryText: {
-    textAlign: 'center',
-    color: '#666',
-  },
-  bucketCard: {
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 12,
-  },
-  bucketHeader: {
+
+  header: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 12,
+    justifyContent: 'space-between',
+    paddingHorizontal: Spacing.page,
+    paddingVertical: Spacing[4],
+    backgroundColor: Colors.card,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.border.subtle,
   },
-  bucketEmoji: {
-    fontSize: 32,
-    marginRight: 12,
+  headerTitle: {
+    fontFamily: FontFamily.bold,
+    fontSize: FontSize.xl,
+    color: Colors.text.primary,
+    letterSpacing: -0.25,
   },
-  bucketInfo: {
+  configureButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: Colors.card,
+    borderWidth: 1,
+    borderColor: Colors.border.subtle,
+    alignItems: 'center',
+    justifyContent: 'center',
+    ...Shadows.card,
+  },
+
+  scroll: {
     flex: 1,
   },
-  bucketName: {
-    fontSize: 16,
-    fontWeight: '600',
+  scrollContent: {
+    paddingHorizontal: Spacing.page,
+    paddingTop: Spacing[5],
+    gap: Spacing[4],
   },
-  bucketAllocation: {
-    fontSize: 14,
-    color: '#666',
-  },
-  deleteButton: {
-    padding: 8,
-  },
-  bucketFooter: {
+
+  // Summary
+  summaryRow: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
+    gap: Spacing[3],
+  },
+  summaryPill: {
+    flexDirection: 'row',
     alignItems: 'center',
-    paddingTop: 12,
-    borderTopWidth: 1,
-    borderTopColor: '#eee',
+    gap: Spacing[2],
+    backgroundColor: Colors.card,
+    paddingHorizontal: Spacing[4],
+    paddingVertical: Spacing[2],
+    borderRadius: BorderRadius.full,
+    borderWidth: 1,
+    borderColor: Colors.border.subtle,
+    ...Shadows.subtle,
   },
-  balanceLabel: {
-    color: '#666',
+  summaryDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
   },
-  balanceAmount: {
-    fontSize: 18,
-    fontWeight: '600',
+  summaryText: {
+    fontFamily: FontFamily.medium,
+    fontSize: FontSize.sm,
+    color: Colors.text.secondary,
   },
-  emptyState: {
+  summaryBold: {
+    fontFamily: FontFamily.bold,
+    color: Colors.text.primary,
+  },
+
+  bucketList: {
+    gap: Spacing[4],
+  },
+
+  // Empty state
+  emptyContainer: {
     alignItems: 'center',
-    paddingVertical: 48,
+    paddingTop: Spacing[16],
+    paddingHorizontal: Spacing[8],
+  },
+  emptyIconBox: {
+    width: 96,
+    height: 96,
+    borderRadius: 40,
+    backgroundColor: Colors.card,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: Spacing[6],
+    ...Shadows.card,
   },
   emptyTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    marginTop: 16,
-    marginBottom: 8,
+    fontFamily: FontFamily.black,
+    fontSize: FontSize.lg,
+    color: Colors.text.primary,
+    marginBottom: Spacing[2],
   },
   emptyText: {
-    color: '#666',
+    fontFamily: FontFamily.medium,
+    fontSize: FontSize.md,
+    color: Colors.text.muted,
     textAlign: 'center',
+    lineHeight: 22,
+    marginBottom: Spacing[6],
   },
-  fab: {
-    position: 'absolute',
-    right: 16,
-    bottom: 16,
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: '#0EA5A5',
-    justifyContent: 'center',
+  createButton: {
+    flexDirection: 'row',
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 4,
-    elevation: 5,
+    gap: Spacing[2],
+    paddingHorizontal: Spacing[6],
+    paddingVertical: Spacing[4],
+    backgroundColor: Colors.primary,
+    borderRadius: BorderRadius['2xl'],
+    ...Shadows.buttonPrimary,
+  },
+  createButtonText: {
+    fontFamily: FontFamily.bold,
+    fontSize: FontSize.md,
+    color: 'white',
   },
 });
