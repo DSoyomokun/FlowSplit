@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
 import { type Session, type User as SupabaseUser } from '@supabase/supabase-js';
+import { API_URL } from '@/constants';
 import { supabase } from '@/services/supabase';
 import type { User } from '@/types';
 
@@ -56,8 +57,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   async function fetchUserProfile(accessToken: string) {
     try {
-      const apiUrl = process.env.EXPO_PUBLIC_API_URL;
-      const response = await fetch(`${apiUrl}/users/me`, {
+      const response = await fetch(`${API_URL}/users/me`, {
         headers: {
           Authorization: `Bearer ${accessToken}`,
         },

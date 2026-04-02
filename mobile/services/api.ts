@@ -1,7 +1,6 @@
+import { API_URL } from '@/constants';
 import { supabase } from './supabase';
 import type { BankAccount, Bucket, Deposit, LinkTokenResponse, SplitPlan, SplitPlanPreview, SplitExecutionResponse, User } from '@/types';
-
-const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:8000/api/v1';
 
 async function getAccessToken(): Promise<string | null> {
   const { data: { session } } = await supabase.auth.getSession();
