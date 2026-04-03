@@ -43,16 +43,17 @@ export function ActionCard({
   const [copied, setCopied] = React.useState(false);
 
   const handleOpenLink = async () => {
-    if (linkUrl) {
-      if (Platform.OS !== 'web') {
-        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-      }
-      try {
-        await Linking.openURL(linkUrl);
-        onComplete?.();
-      } catch (error) {
-        console.error('Failed to open URL:', error);
-      }
+    if (!linkUrl) return;
+    // Only allow https:// URLs — reject javascript:, data:, tel:, etc.
+    if (!linkUrl.startsWith('https://')) return;
+    if (Platform.OS !== 'web') {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    }
+    try {
+      await Linking.openURL(linkUrl);
+      onComplete?.();
+    } catch {
+      // Silently fail — the copy-link fallback is still available
     }
   };
 

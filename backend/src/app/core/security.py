@@ -32,11 +32,11 @@ def verify_supabase_token(token: str) -> dict | None:
         # Get the algorithm from the token header
         unverified_header = jwt.get_unverified_header(token)
         algorithm = unverified_header.get("alg", "HS256")
-        logger.info(f"Token algorithm: {algorithm}")
+        logger.debug(f"Token algorithm: {algorithm}")
 
         # ES256/RS256 tokens use JWKS for verification
         if algorithm in ["ES256", "RS256"]:
-            logger.info("Using JWKS verification")
+            logger.debug("Using JWKS verification")
             jwks_client = get_jwks_client()
             signing_key = jwks_client.get_signing_key_from_jwt(token)
             payload = jwt.decode(
@@ -45,19 +45,19 @@ def verify_supabase_token(token: str) -> dict | None:
                 algorithms=[algorithm],
                 audience="authenticated",
             )
-            logger.info(f"Token verified successfully for user: {payload.get('sub')}")
+            logger.debug("Token verified successfully")
             return payload
 
         # HS256 tokens use the JWT secret directly
         if settings.supabase_jwt_secret:
-            logger.info("Using JWT secret verification")
+            logger.debug("Using JWT secret verification")
             payload = jwt.decode(
                 token,
                 settings.supabase_jwt_secret,
                 algorithms=["HS256"],
                 audience="authenticated",
             )
-            logger.info(f"Token verified successfully for user: {payload.get('sub')}")
+            logger.debug("Token verified successfully")
             return payload
 
         logger.warning("No verification method available")

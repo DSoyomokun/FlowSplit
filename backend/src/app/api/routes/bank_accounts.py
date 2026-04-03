@@ -47,10 +47,10 @@ async def create_link_token(
         )
     except PlaidApiException as e:
         logger.error(f"Plaid link token error: {e.body}")
-        raise HTTPException(status_code=400, detail=f"Plaid error: {e.body}")
+        raise HTTPException(status_code=400, detail="Failed to create link token")
     except Exception as e:
         logger.error(f"Link token error: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 
 @router.post(

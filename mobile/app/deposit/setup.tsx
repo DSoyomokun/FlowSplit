@@ -5,7 +5,7 @@
  * Stories: 46, 47, 48
  */
 
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import {
   View,
   Text,
@@ -31,34 +31,32 @@ import {
   BottomActionBar,
   Skeleton,
 } from '@/components';
-
-// Mock accounts for development
-const MOCK_ACCOUNTS = [
-  {
-    id: '1',
-    name: 'Chase Checking',
-    type: 'Main Hub',
-    lastFour: '4821',
-    bankId: 'chase',
-  },
-  {
-    id: '2',
-    name: 'Venmo Balance',
-    type: 'Gig Income',
-    lastFour: undefined,
-    bankId: 'venmo',
-  },
-];
+import * as api from '@/services/api';
+import type { BankAccount } from '@/types';
 
 export default function DepositSetupScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
 
+  // Bank accounts
+  const [accounts, setAccounts] = useState<BankAccount[]>([]);
+  const [accountsLoading, setAccountsLoading] = useState(true);
+
+  useEffect(() => {
+    api.getBankAccounts()
+      .then((data) => {
+        setAccounts(data);
+        // Auto-select primary account
+        const primary = data.find((a) => a.is_primary) ?? data[0];
+        if (primary) setSelectedAccountId(primary.id);
+      })
+      .catch(() => {})
+      .finally(() => setAccountsLoading(false));
+  }, []);
+
   // Form state
   const [amount, setAmount] = useState(0);
-  const [selectedAccountId, setSelectedAccountId] = useState<string | undefined>(
-    MOCK_ACCOUNTS[0]?.id
-  );
+  const [selectedAccountId, setSelectedAccountId] = useState<string | undefined>(undefined);
   const [isLoading, setIsLoading] = useState(false);
 
   // Validation
@@ -86,8 +84,8 @@ export default function DepositSetupScreen() {
   };
 
   const handleAddAccount = () => {
-    // TODO: Navigate to add account flow
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    router.push('/bank-accounts');
   };
 
   const handleContinue = async () => {
@@ -97,10 +95,11 @@ export default function DepositSetupScreen() {
     setIsLoading(true);
 
     try {
-      // TODO: Create deposit via API and get ID
-      // For now, navigate with mock ID
-      const depositId = 'mock-deposit-' + Date.now();
-      router.push(`/deposit/${depositId}/allocate`);
+      const deposit = await api.createDeposit({
+        amount,
+        source: accounts.find((a) => a.id === selectedAccountId)?.name,
+      });
+      router.push(`/deposit/${deposit.id}/allocate`);
     } catch (error) {
       console.error('Failed to create deposit:', error);
     } finally {
@@ -151,13 +150,36 @@ export default function DepositSetupScreen() {
 
           {/* Account Selection Section */}
           <View style={styles.accountSection}>
-            <AccountSelector
-              accounts={MOCK_ACCOUNTS}
-              selectedId={selectedAccountId}
-              onSelect={handleAccountSelect}
-              onAddAccount={handleAddAccount}
-              label="Source Account"
-            />
+            {accountsLoading ? (
+              <View style={{ gap: Spacing[3] }}>
+                <Skeleton width={120} height={12} />
+                <Skeleton width="100%" height={72} variant="rounded" />
+                <Skeleton width="100%" height={72} variant="rounded" />
+              </View>
+            ) : accounts.length === 0 ? (
+              <Pressable onPress={handleAddAccount} style={styles.noAccountsBanner}>
+                <Ionicons name="card-outline" size={20} color={Colors.primary} />
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.noAccountsTitle}>No accounts linked</Text>
+                  <Text style={styles.noAccountsSub}>Tap to connect a bank account</Text>
+                </View>
+                <Ionicons name="chevron-forward" size={16} color={Colors.text.muted} />
+              </Pressable>
+            ) : (
+              <AccountSelector
+                accounts={accounts.map((a) => ({
+                  id: a.id,
+                  name: a.name,
+                  type: a.subtype || a.type,
+                  lastFour: a.mask ?? undefined,
+                  bankId: a.institution_id ?? undefined,
+                }))}
+                selectedId={selectedAccountId}
+                onSelect={handleAccountSelect}
+                onAddAccount={handleAddAccount}
+                label="Source Account"
+              />
+            )}
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
@@ -222,5 +244,27 @@ const styles = StyleSheet.create({
     color: Colors.text.muted,
     textAlign: 'center',
     paddingHorizontal: Spacing[8],
+  },
+  noAccountsBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing[3],
+    padding: Spacing[5],
+    backgroundColor: Colors.card,
+    borderRadius: BorderRadius.cardMedium,
+    borderWidth: 1.5,
+    borderColor: `${Colors.primary}30`,
+    borderStyle: 'dashed',
+  },
+  noAccountsTitle: {
+    fontFamily: FontFamily.bold,
+    fontSize: FontSize.md,
+    color: Colors.text.primary,
+  },
+  noAccountsSub: {
+    fontFamily: FontFamily.medium,
+    fontSize: FontSize.sm,
+    color: Colors.text.muted,
+    marginTop: 2,
   },
 });
