@@ -102,11 +102,11 @@ export default function SplitCompleteScreen() {
     <View style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
-        <View style={styles.headerButton} />
-        <Text style={styles.headerTitle}>FlowSplit</Text>
-        <Pressable style={styles.headerButton}>
-          <Ionicons name="menu" size={24} color={Colors.text.muted} />
+        <Pressable onPress={() => router.back()} style={styles.headerButton} hitSlop={8}>
+          <Ionicons name="chevron-back" size={24} color={Colors.text.muted} />
         </Pressable>
+        <Text style={styles.headerTitle}>FlowSplit</Text>
+        <View style={styles.headerButton} />
       </View>
 
       <ScrollView

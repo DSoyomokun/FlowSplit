@@ -11,14 +11,18 @@ import {
   Text,
   View,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Colors } from '@/constants/colors';
+import { FontFamily, FontSize, LetterSpacing } from '@/constants/typography';
+import { BorderRadius, Spacing } from '@/constants/spacing';
+import { Shadows } from '@/constants/shadows';
 import { usePlaidLink } from '@/hooks/usePlaidLink';
 import * as api from '@/services/api';
 import type { BankAccount } from '@/types';
 
 export default function BankAccountsScreen() {
+  const insets = useSafeAreaInsets();
   const [accounts, setAccounts] = useState<BankAccount[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -46,18 +50,14 @@ export default function BankAccountsScreen() {
   );
 
   useEffect(() => {
-    if (linkError) {
-      Alert.alert('Link Error', linkError);
-    }
+    if (linkError) Alert.alert('Link Error', linkError);
   }, [linkError]);
 
   const handleSetPrimary = async (account: BankAccount) => {
     try {
       const updated = await api.updateBankAccount(account.id, { is_primary: true });
       setAccounts((prev) =>
-        prev.map((a) =>
-          a.id === updated.id ? updated : { ...a, is_primary: false }
-        )
+        prev.map((a) => (a.id === updated.id ? updated : { ...a, is_primary: false }))
       );
     } catch {
       Alert.alert('Error', 'Failed to set primary account');
@@ -67,7 +67,7 @@ export default function BankAccountsScreen() {
   const handleRemove = (account: BankAccount) => {
     Alert.alert(
       'Remove Account',
-      `Remove ${account.name} (••••${account.mask})?`,
+      `Remove ${account.name}${account.mask ? ` (••••${account.mask})` : ''}?`,
       [
         { text: 'Cancel', style: 'cancel' },
         {
@@ -86,82 +86,94 @@ export default function BankAccountsScreen() {
     );
   };
 
+  const handleMenu = (account: BankAccount) => {
+    const options: { text: string; onPress?: () => void; style?: 'cancel' | 'destructive' }[] = [];
+    if (!account.is_primary) {
+      options.push({ text: 'Set as Primary', onPress: () => handleSetPrimary(account) });
+    }
+    options.push({ text: 'Remove Account', style: 'destructive', onPress: () => handleRemove(account) });
+    options.push({ text: 'Cancel', style: 'cancel' });
+    Alert.alert(account.name, undefined, options);
+  };
+
   const getAccountIcon = (type: string): keyof typeof Ionicons.glyphMap => {
     switch (type) {
-      case 'depository':
-        return 'wallet-outline';
-      case 'credit':
-        return 'card-outline';
-      case 'loan':
-        return 'trending-down-outline';
-      default:
-        return 'cash-outline';
+      case 'depository': return 'wallet-outline';
+      case 'credit': return 'card-outline';
+      case 'loan': return 'trending-down-outline';
+      default: return 'cash-outline';
     }
   };
 
   if (isLoading) {
     return (
-      <SafeAreaView style={styles.container}>
+      <View style={[styles.container, { paddingTop: insets.top }]}>
+        <View style={styles.header}>
+          <Pressable onPress={() => router.back()} style={styles.backButton} hitSlop={8}>
+            <Ionicons name="chevron-back" size={24} color={Colors.text.muted} />
+          </Pressable>
+          <Text style={styles.headerTitle}>Bank Accounts</Text>
+          <View style={styles.backButton} />
+        </View>
         <View style={styles.centered}>
           <ActivityIndicator size="large" color={Colors.primary} />
         </View>
-      </SafeAreaView>
+      </View>
     );
   }
 
   return (
-    <SafeAreaView style={styles.container}>
+    <View style={[styles.container, { paddingTop: insets.top }]}>
       {/* Header */}
       <View style={styles.header}>
-        <Pressable onPress={() => router.back()} style={styles.backButton}>
-          <Ionicons name="arrow-back" size={24} color={Colors.text.primary} />
+        <Pressable onPress={() => router.back()} style={styles.backButton} hitSlop={8}>
+          <Ionicons name="chevron-back" size={24} color={Colors.text.muted} />
         </Pressable>
-        <Text style={styles.title}>Bank Accounts</Text>
-        <View style={styles.headerSpacer} />
+        <Text style={styles.headerTitle}>Bank Accounts</Text>
+        <View style={styles.backButton} />
       </View>
 
       <ScrollView
-        style={styles.scrollView}
-        contentContainerStyle={styles.scrollContent}
+        style={styles.scroll}
+        contentContainerStyle={[
+          styles.scrollContent,
+          { paddingBottom: insets.bottom + 100 },
+        ]}
+        showsVerticalScrollIndicator={false}
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
-            onRefresh={() => {
-              setRefreshing(true);
-              fetchAccounts();
-            }}
+            onRefresh={() => { setRefreshing(true); fetchAccounts(); }}
             tintColor={Colors.primary}
           />
         }
       >
         {accounts.length === 0 ? (
-          /* Empty State */
-          <View style={styles.emptyState}>
-            <View style={styles.emptyIcon}>
-              <Ionicons name="wallet-outline" size={48} color={Colors.text.muted} />
+          <View style={styles.emptyContainer}>
+            <View style={styles.emptyIconBox}>
+              <Ionicons name="wallet-outline" size={40} color={`${Colors.primary}30`} />
             </View>
             <Text style={styles.emptyTitle}>No Accounts Linked</Text>
-            <Text style={styles.emptySubtitle}>
+            <Text style={styles.emptyText}>
               Connect your bank account to start auto-splitting your deposits.
             </Text>
           </View>
         ) : (
-          /* Account List */
           <View style={styles.accountList}>
             {accounts.map((account) => (
-              <Pressable
-                key={account.id}
-                style={styles.accountCard}
-                onLongPress={() => handleRemove(account)}
-              >
+              <View key={account.id} style={styles.accountCard}>
                 <View style={styles.accountRow}>
-                  <View style={[styles.accountIcon, account.is_primary && styles.accountIconPrimary]}>
+                  <View style={[
+                    styles.accountIcon,
+                    account.is_primary && styles.accountIconPrimary,
+                  ]}>
                     <Ionicons
                       name={getAccountIcon(account.type)}
                       size={22}
                       color={account.is_primary ? Colors.primary : Colors.text.secondary}
                     />
                   </View>
+
                   <View style={styles.accountInfo}>
                     <View style={styles.accountNameRow}>
                       <Text style={styles.accountName}>{account.name}</Text>
@@ -172,55 +184,40 @@ export default function BankAccountsScreen() {
                       )}
                     </View>
                     <Text style={styles.accountDetail}>
-                      {account.institution_name || 'Bank'} • ••••{account.mask} • {account.subtype || account.type}
+                      {account.institution_name || 'Bank'}
+                      {account.mask ? ` • ••••${account.mask}` : ''}
+                      {` • ${account.subtype || account.type}`}
                     </Text>
                   </View>
-                  <Pressable
-                    style={styles.menuButton}
-                    onPress={() => {
-                      const options: { text: string; onPress?: () => void; style?: 'cancel' | 'destructive' }[] = [];
-                      if (!account.is_primary) {
-                        options.push({
-                          text: 'Set as Primary',
-                          onPress: () => handleSetPrimary(account),
-                        });
-                      }
-                      options.push({
-                        text: 'Remove Account',
-                        style: 'destructive',
-                        onPress: () => handleRemove(account),
-                      });
-                      options.push({ text: 'Cancel', style: 'cancel' });
-                      Alert.alert(account.name, undefined, options);
-                    }}
-                  >
+
+                  <Pressable style={styles.menuButton} onPress={() => handleMenu(account)} hitSlop={8}>
                     <Ionicons name="ellipsis-vertical" size={20} color={Colors.text.muted} />
                   </Pressable>
                 </View>
-              </Pressable>
+              </View>
             ))}
           </View>
         )}
       </ScrollView>
 
       {/* Link Account Button */}
-      <View style={styles.bottomBar}>
+      <View style={[styles.bottomBar, { paddingBottom: insets.bottom + Spacing[4] }]}>
         <Pressable
-          style={[styles.linkButton, isLinking && styles.linkButtonDisabled]}
+          style={[styles.linkButton, isLinking && { opacity: 0.7 }]}
           onPress={openPlaidLink}
           disabled={isLinking}
         >
           {isLinking ? (
-            <ActivityIndicator size="small" color="#fff" />
+            <ActivityIndicator size="small" color="white" />
           ) : (
             <>
-              <Ionicons name="add-circle-outline" size={22} color="#fff" />
+              <Ionicons name="add-circle-outline" size={20} color="white" />
               <Text style={styles.linkButtonText}>Link Bank Account</Text>
             </>
           )}
         </Pressable>
       </View>
-    </SafeAreaView>
+    </View>
   );
 }
 
@@ -234,144 +231,155 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
+
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
+    justifyContent: 'space-between',
+    paddingHorizontal: Spacing.page,
+    paddingVertical: Spacing[4],
+    backgroundColor: Colors.card,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.border.subtle,
+  },
+  headerTitle: {
+    fontFamily: FontFamily.bold,
+    fontSize: FontSize.xl,
+    color: Colors.text.primary,
+    letterSpacing: -0.25,
   },
   backButton: {
-    padding: 4,
-  },
-  title: {
-    flex: 1,
-    fontSize: 20,
-    fontWeight: '700',
-    color: Colors.text.primary,
-    textAlign: 'center',
-  },
-  headerSpacer: {
     width: 32,
+    height: 32,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  scrollView: {
+
+  scroll: {
     flex: 1,
   },
   scrollContent: {
-    padding: 16,
-    paddingBottom: 100,
+    paddingHorizontal: Spacing.page,
+    paddingTop: Spacing[6],
   },
 
   // Empty state
-  emptyState: {
+  emptyContainer: {
     alignItems: 'center',
-    paddingTop: 80,
-    paddingHorizontal: 32,
+    paddingTop: Spacing[16],
+    paddingHorizontal: Spacing[8],
   },
-  emptyIcon: {
+  emptyIconBox: {
     width: 96,
     height: 96,
-    borderRadius: 48,
-    backgroundColor: Colors.gray[100],
-    justifyContent: 'center',
+    borderRadius: 40,
+    backgroundColor: Colors.card,
     alignItems: 'center',
-    marginBottom: 20,
+    justifyContent: 'center',
+    marginBottom: Spacing[6],
+    ...Shadows.card,
   },
   emptyTitle: {
-    fontSize: 20,
-    fontWeight: '700',
+    fontFamily: FontFamily.black,
+    fontSize: FontSize.lg,
     color: Colors.text.primary,
-    marginBottom: 8,
+    marginBottom: Spacing[2],
   },
-  emptySubtitle: {
-    fontSize: 15,
-    color: Colors.text.secondary,
+  emptyText: {
+    fontFamily: FontFamily.medium,
+    fontSize: FontSize.md,
+    color: Colors.text.muted,
     textAlign: 'center',
     lineHeight: 22,
   },
 
   // Account list
   accountList: {
-    gap: 12,
+    gap: Spacing[4],
   },
   accountCard: {
     backgroundColor: Colors.card,
-    borderRadius: 16,
-    padding: 16,
+    borderRadius: BorderRadius.cardMedium,
+    padding: Spacing[5],
+    borderWidth: 1,
+    borderColor: Colors.border.subtle,
+    ...Shadows.card,
   },
   accountRow: {
     flexDirection: 'row',
     alignItems: 'center',
+    gap: Spacing[4],
   },
   accountIcon: {
     width: 44,
     height: 44,
-    borderRadius: 22,
+    borderRadius: BorderRadius.lg,
     backgroundColor: Colors.gray[100],
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 12,
+    flexShrink: 0,
   },
   accountIconPrimary: {
     backgroundColor: Colors.primaryLight,
   },
   accountInfo: {
     flex: 1,
+    gap: Spacing[1],
   },
   accountNameRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    gap: Spacing[2],
+    flexWrap: 'wrap',
   },
   accountName: {
-    fontSize: 16,
-    fontWeight: '600',
+    fontFamily: FontFamily.bold,
+    fontSize: FontSize.md,
     color: Colors.text.primary,
   },
   primaryBadge: {
     backgroundColor: Colors.primaryLight,
-    paddingHorizontal: 8,
+    paddingHorizontal: Spacing[2],
     paddingVertical: 2,
-    borderRadius: 8,
+    borderRadius: BorderRadius.badge,
   },
   primaryBadgeText: {
-    fontSize: 11,
-    fontWeight: '600',
+    fontFamily: FontFamily.bold,
+    fontSize: FontSize.xs,
     color: Colors.primary,
+    textTransform: 'uppercase',
+    letterSpacing: LetterSpacing.wide,
   },
   accountDetail: {
-    fontSize: 13,
+    fontFamily: FontFamily.medium,
+    fontSize: FontSize.sm,
     color: Colors.text.secondary,
-    marginTop: 2,
   },
   menuButton: {
-    padding: 8,
+    padding: Spacing[1],
   },
 
   // Bottom bar
   bottomBar: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    padding: 16,
-    paddingBottom: 32,
-    backgroundColor: Colors.background,
+    paddingHorizontal: Spacing.page,
+    paddingTop: Spacing[4],
+    backgroundColor: Colors.card,
+    borderTopWidth: 1,
+    borderTopColor: Colors.border.subtle,
   },
   linkButton: {
     backgroundColor: Colors.primary,
-    borderRadius: 16,
-    paddingVertical: 16,
+    borderRadius: BorderRadius.xl,
+    height: 56,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 8,
-  },
-  linkButtonDisabled: {
-    opacity: 0.7,
+    gap: Spacing[2],
+    ...Shadows.buttonPrimary,
   },
   linkButtonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '600',
+    fontFamily: FontFamily.bold,
+    fontSize: FontSize.md,
+    color: 'white',
   },
 });
