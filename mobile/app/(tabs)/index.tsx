@@ -1,13 +1,12 @@
 /**
  * Dashboard Screen
- * Main home screen with balance overview, pending splits, and bucket summary
+ * Balance overview, pending splits, and recent activity
  */
 
 import { useCallback, useState } from 'react';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import {
-  Dimensions,
   Pressable,
   RefreshControl,
   ScrollView,
@@ -20,19 +19,12 @@ import { useFocusEffect } from '@react-navigation/native';
 
 import { useAuth } from '@/contexts/AuthContext';
 import { useBuckets, useDeposits, useDepositMutations } from '@/hooks';
-import {
-  FloatingActionButton,
-  AddDepositModal,
-} from '@/components';
-import { Colors, BucketColors } from '@/constants/colors';
+import { FloatingActionButton, AddDepositModal } from '@/components';
+import { Colors } from '@/constants/colors';
 import { FontFamily, FontSize, LetterSpacing } from '@/constants/typography';
 import { Spacing, BorderRadius } from '@/constants/spacing';
 import { Shadows } from '@/constants/shadows';
-import type { Bucket, Deposit } from '@/types';
-
-const CARD_GAP = Spacing[3];
-const SCREEN_WIDTH = Dimensions.get('window').width;
-const BUCKET_CARD_WIDTH = (SCREEN_WIDTH - Spacing.page * 2 - CARD_GAP) / 2;
+import type { Deposit } from '@/types';
 
 function formatCurrency(amount: number) {
   return `$${amount.toLocaleString('en-US', {
@@ -41,16 +33,24 @@ function formatCurrency(amount: number) {
   })}`;
 }
 
+function formatDate(dateStr: string): string {
+  const date = new Date(dateStr);
+  const now = new Date();
+  const diffDays = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60 * 24));
+  if (diffDays === 0) return 'Today';
+  if (diffDays === 1) return 'Yesterday';
+  if (diffDays < 7) return date.toLocaleDateString('en-US', { weekday: 'short' });
+  return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+}
+
 // ─── Balance Card ─────────────────────────────────────────────────────────────
 
 function BalanceCard({ name, balance }: { name: string; balance: number }) {
   const [whole, cents] = formatCurrency(balance).split('.');
   return (
     <View style={styles.balanceCard}>
-      {/* Decorative circles */}
       <View style={styles.balanceDecorCircle1} />
       <View style={styles.balanceDecorCircle2} />
-
       <Text style={styles.balanceGreeting}>Hello, {name} 👋</Text>
       <Text style={styles.balanceLabel}>TOTAL BALANCE</Text>
       <View style={styles.balanceAmountRow}>
@@ -61,7 +61,7 @@ function BalanceCard({ name, balance }: { name: string; balance: number }) {
   );
 }
 
-// ─── Pending Deposit Card ─────────────────────────────────────────────────────
+// ─── Pending Card ─────────────────────────────────────────────────────────────
 
 function PendingCard({ deposit }: { deposit: Deposit }) {
   return (
@@ -88,51 +88,51 @@ function PendingCard({ deposit }: { deposit: Deposit }) {
   );
 }
 
-// ─── Bucket Card ──────────────────────────────────────────────────────────────
+// ─── Recent Activity Item ─────────────────────────────────────────────────────
 
-function BucketCard({ bucket, index }: { bucket: Bucket; index: number }) {
-  const color = bucket.color || BucketColors[index % BucketColors.length];
+function ActivityItem({ deposit, last }: { deposit: Deposit; last: boolean }) {
+  const isCompleted = deposit.status === 'completed';
+  const isFailed = deposit.status === 'failed';
+
   return (
-    <Pressable
-      style={({ pressed }) => [styles.bucketCard, pressed && { opacity: 0.85 }]}
-      onPress={() => router.push(`/buckets/${bucket.id}`)}
-    >
-      {/* Color strip */}
-      <View style={[styles.bucketStrip, { backgroundColor: color }]} />
-      <View style={styles.bucketBody}>
-        <Text style={styles.bucketEmoji}>{bucket.emoji || '💰'}</Text>
-        <Text style={styles.bucketName} numberOfLines={1}>{bucket.name}</Text>
-        <Text style={styles.bucketBalance}>{formatCurrency(bucket.current_balance)}</Text>
-        <View style={[styles.bucketAllocationPill, { backgroundColor: `${color}18` }]}>
-          <Text style={[styles.bucketAllocationText, { color }]}>
-            {bucket.bucket_type === 'percentage'
-              ? `${bucket.allocation_value}%`
-              : formatCurrency(bucket.allocation_value)}
+    <>
+      <Pressable
+        style={({ pressed }) => [styles.activityRow, pressed && { opacity: 0.75 }]}
+        onPress={() =>
+          router.push(
+            isCompleted
+              ? `/deposit/${deposit.id}/complete`
+              : `/deposit/${deposit.id}/allocate`
+          )
+        }
+      >
+        <View
+          style={[
+            styles.activityIcon,
+            isCompleted && styles.activityIconSuccess,
+            isFailed && styles.activityIconError,
+          ]}
+        >
+          <Ionicons
+            name={isFailed ? 'close' : 'checkmark'}
+            size={16}
+            color={isFailed ? Colors.error.text : Colors.success.text}
+          />
+        </View>
+
+        <View style={styles.activityInfo}>
+          <Text style={styles.activitySource} numberOfLines={1}>
+            {deposit.source || deposit.description || 'Deposit'}
+          </Text>
+          <Text style={styles.activityDate}>
+            {formatDate(deposit.detected_at)}
           </Text>
         </View>
-      </View>
-    </Pressable>
-  );
-}
 
-// ─── Empty Buckets ────────────────────────────────────────────────────────────
-
-function EmptyBucketsCard() {
-  return (
-    <Pressable
-      style={styles.emptyBucketsCard}
-      onPress={() => router.push('/buckets/new')}
-    >
-      <View style={styles.emptyBucketsIcon}>
-        <Ionicons name="pie-chart-outline" size={28} color={`${Colors.primary}50`} />
-      </View>
-      <Text style={styles.emptyBucketsTitle}>No buckets yet</Text>
-      <Text style={styles.emptyBucketsText}>Create your first bucket to start splitting deposits</Text>
-      <View style={styles.emptyBucketsButton}>
-        <Ionicons name="add" size={16} color={Colors.primary} />
-        <Text style={styles.emptyBucketsButtonText}>Create Bucket</Text>
-      </View>
-    </Pressable>
+        <Text style={styles.activityAmount}>{formatCurrency(deposit.amount)}</Text>
+      </Pressable>
+      {!last && <View style={styles.activityDivider} />}
+    </>
   );
 }
 
@@ -142,7 +142,7 @@ export default function DashboardScreen() {
   const { user } = useAuth();
   const insets = useSafeAreaInsets();
   const { buckets, isLoading: bucketsLoading, refetch: refetchBuckets } = useBuckets();
-  const { pendingDeposits, isLoading: depositsLoading, refetch: refetchDeposits } = useDeposits();
+  const { deposits, pendingDeposits, isLoading: depositsLoading, refetch: refetchDeposits } = useDeposits();
   const { createDeposit, isCreating } = useDepositMutations();
   const [showAddDeposit, setShowAddDeposit] = useState(false);
 
@@ -157,6 +157,9 @@ export default function DashboardScreen() {
 
   const totalBalance = buckets.reduce((sum, b) => sum + b.current_balance, 0);
   const firstName = user?.full_name?.split(' ')[0] || 'there';
+  const recentActivity = deposits
+    .filter((d) => d.status === 'completed' || d.status === 'failed')
+    .slice(0, 5);
 
   async function onRefresh() {
     await Promise.all([refetchBuckets(), refetchDeposits()]);
@@ -187,16 +190,9 @@ export default function DashboardScreen() {
 
       <ScrollView
         style={styles.scroll}
-        contentContainerStyle={[
-          styles.scrollContent,
-          { paddingBottom: insets.bottom + 100 },
-        ]}
+        contentContainerStyle={[styles.scrollContent, { paddingBottom: insets.bottom + 100 }]}
         refreshControl={
-          <RefreshControl
-            refreshing={isLoading}
-            onRefresh={onRefresh}
-            tintColor="white"
-          />
+          <RefreshControl refreshing={isLoading} onRefresh={onRefresh} tintColor="white" />
         }
         showsVerticalScrollIndicator={false}
       >
@@ -220,21 +216,32 @@ export default function DashboardScreen() {
           </View>
         )}
 
-        {/* Buckets */}
+        {/* Recent Activity */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
-            <Text style={styles.sectionLabel}>Your Buckets</Text>
-            <Pressable onPress={() => router.push('/(tabs)/buckets')} hitSlop={8}>
+            <Text style={styles.sectionLabel}>Recent Activity</Text>
+            <Pressable onPress={() => router.push('/(tabs)/history')} hitSlop={8}>
               <Text style={styles.seeAll}>See all</Text>
             </Pressable>
           </View>
 
-          {buckets.length === 0 ? (
-            <EmptyBucketsCard />
+          {recentActivity.length === 0 ? (
+            <View style={styles.emptyActivity}>
+              <Ionicons name="time-outline" size={32} color={Colors.gray[300]} />
+              <Text style={styles.emptyActivityText}>
+                {pendingDeposits.length > 0
+                  ? 'Complete your first split to see activity here'
+                  : 'Add a deposit to get started'}
+              </Text>
+            </View>
           ) : (
-            <View style={styles.bucketsGrid}>
-              {buckets.slice(0, 4).map((bucket, index) => (
-                <BucketCard key={bucket.id} bucket={bucket} index={index} />
+            <View style={styles.activityCard}>
+              {recentActivity.map((deposit, index) => (
+                <ActivityItem
+                  key={deposit.id}
+                  deposit={deposit}
+                  last={index === recentActivity.length - 1}
+                />
               ))}
             </View>
           )}
@@ -285,9 +292,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
 
-  scroll: {
-    flex: 1,
-  },
+  scroll: { flex: 1 },
   scrollContent: {
     gap: Spacing[6],
     paddingBottom: Spacing[8],
@@ -451,14 +456,8 @@ const styles = StyleSheet.create({
     letterSpacing: LetterSpacing.wide,
   },
 
-  // Buckets grid
-  bucketsGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: CARD_GAP,
-  },
-  bucketCard: {
-    width: BUCKET_CARD_WIDTH,
+  // Recent Activity
+  activityCard: {
     backgroundColor: Colors.card,
     borderRadius: BorderRadius.cardMedium,
     borderWidth: 1,
@@ -466,89 +465,68 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     ...Shadows.card,
   },
-  bucketStrip: {
-    height: 5,
-    width: '100%',
-  },
-  bucketBody: {
-    padding: Spacing[4],
-    alignItems: 'flex-start',
-    gap: Spacing[1],
-  },
-  bucketEmoji: {
-    fontSize: 26,
-    marginBottom: Spacing[1],
-  },
-  bucketName: {
-    fontFamily: FontFamily.bold,
-    fontSize: FontSize.md,
-    color: Colors.text.primary,
-  },
-  bucketBalance: {
-    fontFamily: FontFamily.black,
-    fontSize: FontSize.lg,
-    color: Colors.text.primary,
-    letterSpacing: -0.5,
-  },
-  bucketAllocationPill: {
-    marginTop: Spacing[1],
-    paddingHorizontal: Spacing[2],
-    paddingVertical: 3,
-    borderRadius: BorderRadius.badge,
-  },
-  bucketAllocationText: {
-    fontFamily: FontFamily.bold,
-    fontSize: FontSize.xs,
-    textTransform: 'uppercase',
-    letterSpacing: LetterSpacing.wide,
-  },
-
-  // Empty buckets
-  emptyBucketsCard: {
-    backgroundColor: Colors.card,
-    borderRadius: BorderRadius.cardMedium,
-    padding: Spacing[6],
+  activityRow: {
+    flexDirection: 'row',
     alignItems: 'center',
-    borderWidth: 1.5,
-    borderColor: Colors.border.light,
-    borderStyle: 'dashed',
-    gap: Spacing[2],
+    paddingHorizontal: Spacing[5],
+    paddingVertical: Spacing[4],
+    gap: Spacing[4],
   },
-  emptyBucketsIcon: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
-    backgroundColor: Colors.gray[50],
+  activityIcon: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: Colors.success.bg,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: Spacing[2],
+    flexShrink: 0,
   },
-  emptyBucketsTitle: {
+  activityIconSuccess: {
+    backgroundColor: Colors.success.bg,
+  },
+  activityIconError: {
+    backgroundColor: Colors.error.bg,
+  },
+  activityInfo: {
+    flex: 1,
+    gap: 2,
+  },
+  activitySource: {
     fontFamily: FontFamily.bold,
     fontSize: FontSize.md,
     color: Colors.text.primary,
   },
-  emptyBucketsText: {
+  activityDate: {
+    fontFamily: FontFamily.medium,
+    fontSize: FontSize.sm,
+    color: Colors.text.muted,
+  },
+  activityAmount: {
+    fontFamily: FontFamily.black,
+    fontSize: FontSize.md,
+    color: Colors.text.primary,
+  },
+  activityDivider: {
+    height: 1,
+    backgroundColor: Colors.border.light,
+    marginLeft: Spacing[5] + 32 + Spacing[4],
+  },
+  emptyActivity: {
+    backgroundColor: Colors.card,
+    borderRadius: BorderRadius.cardMedium,
+    borderWidth: 1,
+    borderColor: Colors.border.subtle,
+    paddingVertical: Spacing[8],
+    alignItems: 'center',
+    gap: Spacing[3],
+    ...Shadows.card,
+  },
+  emptyActivityText: {
     fontFamily: FontFamily.medium,
     fontSize: FontSize.sm,
     color: Colors.text.muted,
     textAlign: 'center',
+    paddingHorizontal: Spacing[6],
     lineHeight: 20,
-  },
-  emptyBucketsButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing[1],
-    marginTop: Spacing[2],
-    paddingHorizontal: Spacing[4],
-    paddingVertical: Spacing[2],
-    borderRadius: BorderRadius.full,
-    borderWidth: 1.5,
-    borderColor: Colors.primary,
-  },
-  emptyBucketsButtonText: {
-    fontFamily: FontFamily.bold,
-    fontSize: FontSize.sm,
-    color: Colors.primary,
   },
 });
