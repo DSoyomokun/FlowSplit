@@ -112,3 +112,27 @@ export interface LinkTokenResponse {
   link_token: string;
   expiration: string;
 }
+
+export interface SplitTemplateItem {
+  id: string;
+  template_id: string;
+  bucket_id: string;
+  allocation_type: 'percentage' | 'fixed';
+  allocation_value: number;
+  sort_order: number;
+  bucket: {
+    id: string;
+    name: string;
+    color: string | null;
+    emoji: string | null;
+  } | null;
+}
+
+export interface SplitTemplate {
+  id: string;
+  user_id: string;
+  name: string;
+  items: SplitTemplateItem[];
+  created_at: string;
+  updated_at: string;
+}

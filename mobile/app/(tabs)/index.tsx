@@ -18,9 +18,10 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 
 import { useAuth } from '@/contexts/AuthContext';
-import { useBuckets, useDeposits, useDepositMutations } from '@/hooks';
+import { useBuckets, useDeposits, useDepositMutations, useSplitTemplates } from '@/hooks';
 import { FloatingActionButton, AddDepositModal } from '@/components';
-import { Colors } from '@/constants/colors';
+import type { SplitTemplate } from '@/types';
+import { Colors, BucketColors } from '@/constants/colors';
 import { FontFamily, FontSize, LetterSpacing } from '@/constants/typography';
 import { Spacing, BorderRadius } from '@/constants/spacing';
 import { Shadows } from '@/constants/shadows';
@@ -88,6 +89,44 @@ function PendingCard({ deposit }: { deposit: Deposit }) {
   );
 }
 
+// ─── Template Card ────────────────────────────────────────────────────────────
+
+function TemplateCard({
+  template,
+  onPress,
+}: {
+  template: SplitTemplate;
+  onPress: (template: SplitTemplate) => void;
+}) {
+  return (
+    <Pressable
+      style={({ pressed }) => [styles.templateCard, pressed && { opacity: 0.8 }]}
+      onPress={() => onPress(template)}
+    >
+      <Text style={styles.templateName} numberOfLines={1}>
+        {template.name}
+      </Text>
+      <View style={styles.templateDots}>
+        {template.items.slice(0, 4).map((item, index) => (
+          <View
+            key={item.id}
+            style={[
+              styles.templateDot,
+              { backgroundColor: item.bucket?.color || BucketColors[index % BucketColors.length] },
+            ]}
+          />
+        ))}
+        {template.items.length > 4 && (
+          <Text style={styles.templateMoreText}>+{template.items.length - 4}</Text>
+        )}
+      </View>
+      <Text style={styles.templateBuckets} numberOfLines={1}>
+        {template.items.map((i) => i.bucket?.name || 'Bucket').join(' · ')}
+      </Text>
+    </Pressable>
+  );
+}
+
 // ─── Recent Activity Item ─────────────────────────────────────────────────────
 
 function ActivityItem({ deposit, last }: { deposit: Deposit; last: boolean }) {
@@ -143,8 +182,10 @@ export default function DashboardScreen() {
   const insets = useSafeAreaInsets();
   const { buckets, isLoading: bucketsLoading, refetch: refetchBuckets } = useBuckets();
   const { deposits, pendingDeposits, isLoading: depositsLoading, refetch: refetchDeposits } = useDeposits();
+  const { templates, refetch: refetchTemplates } = useSplitTemplates();
   const { createDeposit, isCreating } = useDepositMutations();
   const [showAddDeposit, setShowAddDeposit] = useState(false);
+  const [selectedTemplateId, setSelectedTemplateId] = useState<string | null>(null);
 
   const isLoading = bucketsLoading || depositsLoading;
 
@@ -152,7 +193,8 @@ export default function DashboardScreen() {
     useCallback(() => {
       refetchBuckets();
       refetchDeposits();
-    }, [refetchBuckets, refetchDeposits])
+      refetchTemplates();
+    }, [refetchBuckets, refetchDeposits, refetchTemplates])
   );
 
   const totalBalance = buckets.reduce((sum, b) => sum + b.current_balance, 0);
@@ -165,11 +207,20 @@ export default function DashboardScreen() {
     await Promise.all([refetchBuckets(), refetchDeposits()]);
   }
 
+  function handleTemplatePress(template: SplitTemplate) {
+    setSelectedTemplateId(template.id);
+    setShowAddDeposit(true);
+  }
+
   async function handleAddDeposit(amount: number, description?: string) {
     const deposit = await createDeposit({ amount, description });
     if (deposit) {
       setShowAddDeposit(false);
-      router.push(`/deposit/${deposit.id}/allocate`);
+      const path = selectedTemplateId
+        ? `/deposit/${deposit.id}/allocate?templateId=${selectedTemplateId}`
+        : `/deposit/${deposit.id}/allocate`;
+      setSelectedTemplateId(null);
+      router.push(path as any);
       refetchDeposits();
     }
   }
@@ -215,6 +266,40 @@ export default function DashboardScreen() {
             </View>
           </View>
         )}
+
+        {/* My Splits */}
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionLabel}>My Splits</Text>
+            <Pressable onPress={() => router.push('/split-templates/new')} hitSlop={8}>
+              <Text style={styles.seeAll}>+ New</Text>
+            </Pressable>
+          </View>
+
+          {templates.length === 0 ? (
+            <Pressable
+              style={styles.emptyTemplates}
+              onPress={() => router.push('/split-templates/new')}
+            >
+              <Ionicons name="add-circle-outline" size={20} color={Colors.primary} />
+              <Text style={styles.emptyTemplatesText}>Create a split template to get started</Text>
+            </Pressable>
+          ) : (
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.templateScroll}
+            >
+              {templates.map((template) => (
+                <TemplateCard
+                  key={template.id}
+                  template={template}
+                  onPress={handleTemplatePress}
+                />
+              ))}
+            </ScrollView>
+          )}
+        </View>
 
         {/* Recent Activity */}
         <View style={styles.section}>
@@ -454,6 +539,64 @@ const styles = StyleSheet.create({
     color: Colors.warning.text,
     textTransform: 'uppercase',
     letterSpacing: LetterSpacing.wide,
+  },
+
+  // My Splits
+  templateScroll: {
+    gap: Spacing[3],
+    paddingRight: Spacing[2],
+  },
+  templateCard: {
+    width: 140,
+    backgroundColor: Colors.card,
+    borderRadius: BorderRadius.cardMedium,
+    padding: Spacing[4],
+    borderWidth: 1,
+    borderColor: Colors.border.subtle,
+    gap: Spacing[2],
+    ...Shadows.card,
+  },
+  templateName: {
+    fontFamily: FontFamily.bold,
+    fontSize: FontSize.md,
+    color: Colors.text.primary,
+  },
+  templateDots: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing[1],
+  },
+  templateDot: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+  },
+  templateMoreText: {
+    fontFamily: FontFamily.bold,
+    fontSize: FontSize.xs,
+    color: Colors.text.muted,
+  },
+  templateBuckets: {
+    fontFamily: FontFamily.medium,
+    fontSize: FontSize.base,
+    color: Colors.text.muted,
+  },
+  emptyTemplates: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing[3],
+    backgroundColor: Colors.card,
+    borderRadius: BorderRadius.cardMedium,
+    padding: Spacing[4],
+    borderWidth: 1.5,
+    borderColor: `${Colors.primary}30`,
+    borderStyle: 'dashed',
+  },
+  emptyTemplatesText: {
+    fontFamily: FontFamily.medium,
+    fontSize: FontSize.sm,
+    color: Colors.text.muted,
+    flex: 1,
   },
 
   // Recent Activity

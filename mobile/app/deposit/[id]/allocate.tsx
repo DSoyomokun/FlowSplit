@@ -43,7 +43,7 @@ const MOCK_ALLOCATIONS: DonutSegment[] = [
 
 export default function SplitAllocationScreen() {
   const router = useRouter();
-  const { id: depositId } = useLocalSearchParams<{ id: string }>();
+  const { id: depositId, templateId } = useLocalSearchParams<{ id: string; templateId?: string }>();
   const insets = useSafeAreaInsets();
 
   // Fetch real data
@@ -54,6 +54,7 @@ export default function SplitAllocationScreen() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [allocations, setAllocations] = useState<DonutSegment[]>(MOCK_ALLOCATIONS);
   const [showAddBucket, setShowAddBucket] = useState(false);
+  const [templateInitialized, setTemplateInitialized] = useState(false);
 
   // Swipeable refs to close open rows when adding
   const swipeableRefs = useRef<Map<string, Swipeable | null>>(new Map());
@@ -62,8 +63,35 @@ export default function SplitAllocationScreen() {
   const depositAmount = deposit?.amount || MOCK_DEPOSIT_AMOUNT;
   const isFetching = depositLoading || bucketsLoading;
 
-  // Initialize from buckets when loaded
+  // Pre-fill from template if templateId provided
   useEffect(() => {
+    if (!templateId || buckets.length === 0 || templateInitialized) return;
+    api.getSplitTemplate(templateId).then((template) => {
+      const segments: DonutSegment[] = template.items.map((item, index) => {
+        const bucket = buckets.find((b) => b.id === item.bucket_id);
+        const percentage =
+          item.allocation_type === 'percentage'
+            ? item.allocation_value
+            : depositAmount > 0
+            ? Math.round((item.allocation_value / depositAmount) * 1000) / 10
+            : 10;
+        return {
+          id: item.bucket_id,
+          name: bucket?.name || item.bucket?.name || 'Bucket',
+          percentage,
+          color: bucket?.color || item.bucket?.color || BucketColors[index % BucketColors.length],
+        };
+      });
+      setAllocations(segments);
+      setTemplateInitialized(true);
+    }).catch(() => {
+      setTemplateInitialized(true); // fall through to bucket defaults
+    });
+  }, [templateId, buckets, depositAmount, templateInitialized]);
+
+  // Initialize from buckets when loaded (skipped if template pre-filled)
+  useEffect(() => {
+    if (templateId) return;
     if (buckets.length > 0) {
       const bucketAllocations: DonutSegment[] = buckets.map((bucket, index) => ({
         id: bucket.id,
@@ -73,7 +101,7 @@ export default function SplitAllocationScreen() {
       }));
       setAllocations(bucketAllocations);
     }
-  }, [buckets]);
+  }, [buckets, templateId]);
 
   // Buckets not currently in the allocation
   const availableBuckets = useMemo(() => {

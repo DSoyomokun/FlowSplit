@@ -19,3 +19,6 @@ export { useSplitExecution, type ExecutionStatus } from './useSplitExecution';
 
 // Plaid
 export { usePlaidLink } from './usePlaidLink';
+
+// Templates
+export { useSplitTemplates } from './useSplitTemplates';

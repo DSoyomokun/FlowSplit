@@ -194,3 +194,40 @@ export async function deleteBankAccount(id: string): Promise<void> {
     method: 'DELETE',
   });
 }
+
+// ─── Split Templates ──────────────────────────────────────────────────────────
+
+export async function getSplitTemplates(): Promise<SplitTemplate[]> {
+  return request<SplitTemplate[]>('/split-templates');
+}
+
+export async function getSplitTemplate(id: string): Promise<SplitTemplate> {
+  return request<SplitTemplate>(`/split-templates/${id}`);
+}
+
+export async function createSplitTemplate(data: {
+  name: string;
+  items: { bucket_id: string; allocation_type: 'percentage' | 'fixed'; allocation_value: number }[];
+}): Promise<SplitTemplate> {
+  return request<SplitTemplate>('/split-templates', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  });
+}
+
+export async function updateSplitTemplate(
+  id: string,
+  data: {
+    name?: string;
+    items?: { bucket_id: string; allocation_type: 'percentage' | 'fixed'; allocation_value: number }[];
+  }
+): Promise<SplitTemplate> {
+  return request<SplitTemplate>(`/split-templates/${id}`, {
+    method: 'PATCH',
+    body: JSON.stringify(data),
+  });
+}
+
+export async function deleteSplitTemplate(id: string): Promise<void> {
+  return request<void>(`/split-templates/${id}`, { method: 'DELETE' });
+}
