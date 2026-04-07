@@ -3,6 +3,7 @@ from app.api.routes.bank_accounts import router as bank_accounts_router
 from app.api.routes.buckets import router as buckets_router
 from app.api.routes.deposits import router as deposits_router
 from app.api.routes.split_plans import router as split_plans_router
+from app.api.routes.split_templates import router as split_templates_router
 from app.api.routes.users import router as users_router
 
 __all__ = [
@@ -12,4 +13,5 @@ __all__ = [
     "bank_accounts_router",
     "deposits_router",
     "split_plans_router",
+    "split_templates_router",
 ]

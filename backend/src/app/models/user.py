@@ -48,3 +48,6 @@ class User(Base):
     deposits: Mapped[list["Deposit"]] = relationship(
         "Deposit", back_populates="user", cascade="all, delete-orphan"
     )
+    split_templates: Mapped[list["SplitTemplate"]] = relationship(
+        "SplitTemplate", back_populates="user", cascade="all, delete-orphan"
+    )
