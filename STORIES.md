@@ -298,9 +298,17 @@ Complete breakdown of all work required to ship FlowSplit.
   - Segmented control: Percentage / Fixed Amount
   - Prefixed value input (% or $)
   - Delivery method selection: Internal Transfer / External Link (color-matched)
-  - Save: POST /buckets → PATCH /buckets/{id} for delivery type
+  - External Link: shows Display Name + URL Template fields inline when selected
+  - URL Template supports `{{amount}}` placeholder (auto-filled at split time)
+  - Form validation: external link requires https:// URL + display name
+  - Save: POST /buckets → PATCH /buckets/{id} for delivery type + external_name + external_url
   - Form validation gates Save button
   - Wired from "Add Bucket" and "Create first bucket" on configure screen
+
+- [x] **STORY-057d**: URL template support for External Link buckets
+  - `{{amount}}` in URL template is replaced with actual split amount at execution
+  - Edit bucket screen (`buckets/[id].tsx`) shows helper text: "Use {{amount}} to auto-fill"
+  - Backend `transfer.py` `generate_external_link`: replaces `{{amount}}` if present in template; falls back to appending `?a={amount}` for legacy URLs
 
 - [x] **STORY-057b**: Add delivery method modal to configure screen
   - Tapping a bucket's destination row opens a bottom-sheet modal

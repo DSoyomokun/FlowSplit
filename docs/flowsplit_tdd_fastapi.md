@@ -114,15 +114,18 @@ User-defined allocation rules.
 - `id` (uuid, PK)
 - `user_id` (uuid, FK users)
 - `name` (text)
-- `allocation_type` (text) — 'percentage' | 'fixed'
-- `allocation_value` (numeric(18,6)) — pct like 0.10 OR fixed dollars (store in dollars; precision ok)
-- `delivery_method` (text) — 'internal_transfer' | 'external_link' | 'manual_only'
-- `delivery_metadata` (jsonb) — method-specific config
-  - internal_transfer: `{ "destination_bank_account_id": "<uuid>" }`
-  - external_link: `{ "url_template": "https://...{{amount}}..." }`
-- `priority` (int) — higher runs earlier (or lower = earlier; pick one and document)
+- `color` (text) — hex color for UI display
+- `bucket_type` (text) — 'percentage' | 'fixed'
+- `allocation_value` (numeric(18,6)) — percentage (e.g. 10.0 = 10%) OR fixed dollar amount
+- `destination_type` (text, nullable) — 'internal_transfer' | 'external_link'
+- `external_url` (text, nullable) — URL template for external link buckets; supports `{{amount}}` placeholder which is replaced with the actual split amount at execution time (e.g. `https://pushpay.com/g/org?a={{amount}}`)
+- `external_name` (text, nullable) — display name for the external service (e.g. "Pushpay / FaithChurch")
+- `priority` (int) — order in split plan
 - `is_active` (bool)
+- `current_balance` (numeric(18,2)) — running total allocated to this bucket
 - `created_at`, `updated_at`
+
+**Note:** `destination_type` nullable = bucket exists but delivery method not yet set (user sees "Set delivery method" prompt in UI).
 
 **Index:** `(user_id, is_active, priority)`
 
@@ -262,16 +265,18 @@ Use DB row-level locking or compare-and-set updates:
 ```json
 {
   "name": "Tithe",
-  "allocation_type": "percentage",
-  "allocation_value": 0.10,
-  "delivery_method": "external_link",
-  "delivery_metadata": {
-    "url_template": "https://pushpay.com/g/victorynorcross?a={{amount}}"
-  },
+  "color": "#0EA5A5",
+  "bucket_type": "percentage",
+  "allocation_value": 10.0,
+  "destination_type": "external_link",
+  "external_url": "https://pushpay.com/g/victorynorcross?a={{amount}}",
+  "external_name": "Pushpay / Victory Norcross",
   "priority": 10,
   "is_active": true
 }
 ```
+
+> `{{amount}}` in `external_url` is replaced with the actual split amount (2 decimal places) at execution time by `TransferService.generate_external_link()`. Legacy URLs without the placeholder have `?a={amount}` appended automatically.
 
 #### Deposits + Split Plans
 - `GET /v1/deposits?limit=50&cursor=...`
@@ -415,12 +420,14 @@ External sites that use 2FA must remain manual completion.
 
 ## 12) Appendix — Pydantic Models (Sketch)
 
-**BucketCreate**
+**BucketCreate / BucketUpdate**
 - name: str
-- allocation_type: Literal['percentage','fixed']
+- color: str  — hex color
+- bucket_type: Literal['percentage','fixed']
 - allocation_value: Decimal
-- delivery_method: Literal['internal_transfer','external_link','manual_only']
-- delivery_metadata: dict
+- destination_type: Literal['internal_transfer','external_link'] | None
+- external_url: str | None  — URL template, may contain `{{amount}}`
+- external_name: str | None  — display name for the external service
 - priority: int
 - is_active: bool = True
 
@@ -430,4 +437,4 @@ External sites that use 2FA must remain manual completion.
 
 ---
 
-**Status:** Technical design ready for implementation.
+**Status:** TRD updated April 2026. Reflects implemented state: FastAPI + Supabase auth, bucket CRUD with flat `destination_type`/`external_url`/`external_name` columns (not `delivery_metadata` jsonb), `{{amount}}` URL template replacement in `TransferService`, split execution with `manual_required` action status. Remaining: webhook worker for automated deposit ingestion, SMS notifications via Twilio, Redis/Arq job queue.

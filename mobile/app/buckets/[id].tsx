@@ -367,19 +367,22 @@ export default function EditBucketScreen() {
                 />
               </View>
               <View style={styles.fieldGroup}>
-                <Text style={styles.fieldLabel}>Destination URL</Text>
+                <Text style={styles.fieldLabel}>URL Template</Text>
                 <TextInput
                   style={[styles.input, externalUrlFocused && styles.inputFocused]}
                   value={externalUrl}
                   onChangeText={setExternalUrl}
                   onFocus={() => setExternalUrlFocused(true)}
                   onBlur={() => setExternalUrlFocused(false)}
-                  placeholder="https://pushpay.com/g/your-org"
+                  placeholder="https://pushpay.com/g/org?a={{amount}}"
                   placeholderTextColor={Colors.text.muted}
                   autoCapitalize="none"
                   autoCorrect={false}
                   keyboardType="url"
                 />
+                <Text style={styles.fieldHint}>
+                  Use {'{{amount}}'} to auto-fill the split amount
+                </Text>
               </View>
             </View>
           )}
@@ -490,6 +493,12 @@ const styles = StyleSheet.create({
   },
   inputWithPrefix: {
     paddingLeft: Spacing[4] + 18,
+  },
+  fieldHint: {
+    fontFamily: FontFamily.medium,
+    fontSize: FontSize.base,
+    color: Colors.text.muted,
+    marginTop: Spacing[1],
   },
 
   colorGrid: {

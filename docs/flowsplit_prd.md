@@ -209,12 +209,16 @@ Buckets specify a delivery method:
 | Deposit Setup | `app/deposit/setup.tsx` | 02-deposit-setup.html |
 | Split Allocation | `app/deposit/[id]/allocate.tsx` | 03-split-allocation.html |
 | Bucket Configuration | `app/buckets/configure.tsx` | 04-bucket-configuration.html |
+| Bucket Creation | `app/buckets/new.tsx` | — |
+| Bucket Edit | `app/buckets/[id].tsx` | — |
 | Split Confirmation | `app/deposit/[id]/confirm.tsx` | 05-confirmation.html |
 | Split Complete | `app/deposit/[id]/complete.tsx` | 06-split-complete.html |
 | Split Partial Success | `app/deposit/[id]/complete.tsx` | 07-split-complete-partial.html |
 | Processing/Retry | `app/deposit/[id]/processing.tsx` | 08-split-processing-retry.html |
 | Manual Action Required | `app/deposit/[id]/complete.tsx` (ActionCard) | 09-split-complete-manual-action.html |
 | Split History | `app/(tabs)/history.tsx` | 12-split-history-ledger.html |
+| Bank Accounts | `app/bank-accounts/index.tsx` | — |
+| Settings | `app/(tabs)/settings.tsx` | — |
 
 ### A) Dashboard
 - **Path:** `app/(tabs)/index.tsx`
@@ -249,16 +253,25 @@ Buckets specify a delivery method:
 ### D) Bucket Configuration
 - **Path:** `app/buckets/configure.tsx`
 - **Mockup:** 04-bucket-configuration.html
-- **Status:** UI shell built with loading/empty states; CRUD handlers are stubs (TODO). Bucket create/edit/delete/reorder must be done via API for now.
-- List of existing buckets with:
-  - Color indicator
-  - Name and emoji
-  - Allocation (percentage or fixed amount)
-  - Delivery method indicator
-- Drag to reorder priority
-- Add new bucket button
-- Edit/delete bucket actions
+- List of existing buckets via real API (`useBuckets()`)
+- Each `BucketConfigCard` shows: color/icon, name, allocation %, destination row (or "Set delivery method" dashed row)
+- ⋯ menu navigates to Edit Bucket screen (`buckets/[id].tsx`)
+- "Add Bucket" FAB navigates to Create Bucket screen (`buckets/new.tsx`)
 - **States:** Loading (22), Empty (20), Error (19)
+
+### D1) Bucket Creation
+- **Path:** `app/buckets/new.tsx`
+- Name + 8-color palette + allocation type (Percentage/Fixed) + value input
+- Delivery method: Internal Transfer or External Link
+- External Link: shows Display Name + URL Template fields inline; supports `{{amount}}` placeholder (replaced at split time with actual amount, e.g. `https://pushpay.com/g/org?a={{amount}}`)
+- Validation: external link requires `https://` URL + display name
+- Save: POST /buckets → PATCH /buckets/{id} for delivery type + external fields
+
+### D2) Bucket Edit
+- **Path:** `app/buckets/[id].tsx`
+- Same fields as creation, pre-populated from existing bucket
+- URL Template field shows helper text: "Use {{amount}} to auto-fill the split amount"
+- Danger Zone: Delete Bucket with confirmation alert
 
 ### E) Split Confirmation
 - **Path:** `app/deposit/[id]/confirm.tsx`
@@ -506,4 +519,4 @@ When creating split_actions:
 
 ---
 
-**Status:** PRD updated March 2026. Reflects implemented state: Plaid integration, Supabase auth, Pushpay external link flow, split execution with `manual_required` status. Bucket config UI still uses mock data (CRUD via API only).
+**Status:** PRD updated April 2026. Reflects implemented state: Plaid integration, Supabase auth, full bucket CRUD (create/edit/delete), `{{amount}}` URL template support in external link buckets, split execution with `manual_required` status, split history screen, settings + bank accounts screens. Remaining post-MVP: automated deposit detection (webhook worker), SMS notifications, bucket drag-to-reorder, Split Plans feature (named allocation presets).

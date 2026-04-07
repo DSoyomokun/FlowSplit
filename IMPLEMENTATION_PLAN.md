@@ -1099,7 +1099,9 @@ All screens need to handle multiple states. Below are specifications extracted f
 - [x] `app/deposit/[id]/complete.tsx` - Success
 - [x] `app/deposit/[id]/processing.tsx` - Processing/retry
 - [x] `app/buckets/configure.tsx` - Bucket configuration (uses real useBuckets() data; delivery method modal; "Add Bucket" navigates to new.tsx)
-- [x] `app/buckets/new.tsx` - Bucket creation screen (name, color picker, allocation rule, delivery method; POST + PATCH on save)
+- [x] `app/buckets/new.tsx` - Bucket creation screen (name, color picker, allocation rule, delivery method; External Link shows Display Name + URL Template fields with `{{amount}}` hint; POST + PATCH on save with external_name/external_url)
+- [x] `app/buckets/[id].tsx` - Edit bucket screen (same fields as new.tsx; URL Template field has `{{amount}}` helper text)
+- [x] `backend/services/transfer.py` - `generate_external_link` supports `{{amount}}` template replacement; falls back to appending `?a={amount}` for legacy URLs
 - [x] `app/deposit/[id]/allocate.tsx` - Swipe-to-remove on allocation rows; Add Bucket bottom sheet
 - [x] `app/split-plan/[id].tsx` - Split plan detail
 

@@ -64,16 +64,24 @@ export default function NewBucketScreen() {
   const [allocationValue, setAllocationValue] = useState('');
   const [valueFocused, setValueFocused] = useState(false);
   const [destinationType, setDestinationType] = useState<DeliveryType | null>(null);
+  const [externalName, setExternalName] = useState('');
+  const [externalUrl, setExternalUrl] = useState('');
+  const [externalNameFocused, setExternalNameFocused] = useState(false);
+  const [externalUrlFocused, setExternalUrlFocused] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const parsedValue = parseFloat(allocationValue);
+  const externalLinkValid =
+    destinationType !== 'external_link' ||
+    (externalUrl.trim().startsWith('https://') && externalName.trim().length > 0);
   const isFormValid =
     name.trim().length > 0 &&
     !isNaN(parsedValue) &&
     parsedValue > 0 &&
     (allocationType === 'fixed' || parsedValue <= 100) &&
-    destinationType !== null;
+    destinationType !== null &&
+    externalLinkValid;
 
   const handleSave = async () => {
     if (!isFormValid) return;
@@ -86,8 +94,12 @@ export default function NewBucketScreen() {
         bucket_type: allocationType,
         allocation_value: parsedValue,
       });
-      // Persist delivery method immediately after creation
-      await api.updateBucket(bucket.id, { destination_type: destinationType });
+      // Persist delivery method + external link details immediately after creation
+      await api.updateBucket(bucket.id, {
+        destination_type: destinationType,
+        external_name: destinationType === 'external_link' ? externalName.trim() : null,
+        external_url: destinationType === 'external_link' ? externalUrl.trim() : null,
+      });
       router.back();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to create bucket');
@@ -240,6 +252,43 @@ export default function NewBucketScreen() {
               }}
             />
           </View>
+
+          {/* External link fields — shown inline when external_link is selected */}
+          {destinationType === 'external_link' && (
+            <View style={[styles.card, { marginTop: Spacing[3] }]}>
+              <View style={styles.fieldGroup}>
+                <Text style={styles.fieldLabel}>Display Name</Text>
+                <TextInput
+                  style={[styles.input, externalNameFocused && styles.inputFocused]}
+                  value={externalName}
+                  onChangeText={setExternalName}
+                  onFocus={() => setExternalNameFocused(true)}
+                  onBlur={() => setExternalNameFocused(false)}
+                  placeholder="e.g. Pushpay / FaithChurch"
+                  placeholderTextColor={Colors.text.muted}
+                  autoCorrect={false}
+                />
+              </View>
+              <View style={styles.fieldGroup}>
+                <Text style={styles.fieldLabel}>URL Template</Text>
+                <TextInput
+                  style={[styles.input, externalUrlFocused && styles.inputFocused]}
+                  value={externalUrl}
+                  onChangeText={setExternalUrl}
+                  onFocus={() => setExternalUrlFocused(true)}
+                  onBlur={() => setExternalUrlFocused(false)}
+                  placeholder="https://pushpay.com/g/org?a={{amount}}"
+                  placeholderTextColor={Colors.text.muted}
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                  keyboardType="url"
+                />
+                <Text style={styles.fieldHint}>
+                  Use {'{{amount}}'} to auto-fill the split amount
+                </Text>
+              </View>
+            </View>
+          )}
         </View>
       </ScrollView>
 
@@ -365,6 +414,12 @@ const styles = StyleSheet.create({
   },
   inputWithPrefix: {
     paddingLeft: Spacing[4] + 18,
+  },
+  fieldHint: {
+    fontFamily: FontFamily.medium,
+    fontSize: FontSize.base,
+    color: Colors.text.muted,
+    marginTop: Spacing[1],
   },
 
   // Color picker

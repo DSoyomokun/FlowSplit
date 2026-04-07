@@ -153,6 +153,10 @@ class TransferService:
 
         # Use the bucket's configured URL if available
         if configured_url:
+            # Support {{amount}} template — replace in place if present
+            if "{{amount}}" in configured_url:
+                return configured_url.replace("{{amount}}", str(amount))
+            # Legacy fallback — append amount as query param
             separator = "&" if "?" in configured_url else "?"
             return f"{configured_url}{separator}a={amount}"
 
