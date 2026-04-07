@@ -19,6 +19,7 @@ class DepositResponse(DepositBase):
     id: str
     user_id: str
     bank_account_id: str | None
+    plaid_transaction_id: str | None = None
     status: DepositStatus
     detected_at: datetime
     processed_at: datetime | None

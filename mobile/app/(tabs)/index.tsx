@@ -65,6 +65,9 @@ function BalanceCard({ name, balance }: { name: string; balance: number }) {
 // ─── Pending Card ─────────────────────────────────────────────────────────────
 
 function PendingCard({ deposit }: { deposit: Deposit }) {
+  const isAutoDetected = deposit.status === 'pending_review' || deposit.status === 'detected';
+  const badgeLabel = deposit.status === 'pending_review' ? 'Review plan' : 'Split now';
+
   return (
     <Pressable
       style={({ pressed }) => [styles.pendingCard, pressed && styles.pendingCardPressed]}
@@ -72,16 +75,23 @@ function PendingCard({ deposit }: { deposit: Deposit }) {
     >
       <View style={styles.pendingLeft}>
         <View style={styles.pendingIconBox}>
-          <Ionicons name="flash" size={20} color={Colors.warning.text} />
+          <Ionicons name={isAutoDetected ? 'sparkles' : 'flash'} size={20} color={Colors.warning.text} />
         </View>
         <View>
-          <Text style={styles.pendingAmount}>{formatCurrency(deposit.amount)}</Text>
+          <View style={styles.pendingTitleRow}>
+            <Text style={styles.pendingAmount}>{formatCurrency(deposit.amount)}</Text>
+            {isAutoDetected && (
+              <View style={styles.autoDetectedBadge}>
+                <Text style={styles.autoDetectedText}>auto</Text>
+              </View>
+            )}
+          </View>
           <Text style={styles.pendingSource}>{deposit.source || 'New deposit'}</Text>
         </View>
       </View>
       <View style={styles.pendingRight}>
         <View style={styles.pendingBadge}>
-          <Text style={styles.pendingBadgeText}>Split now</Text>
+          <Text style={styles.pendingBadgeText}>{badgeLabel}</Text>
         </View>
         <Ionicons name="chevron-forward" size={16} color={Colors.warning.text} />
       </View>
@@ -200,7 +210,7 @@ export default function DashboardScreen() {
   const totalBalance = buckets.reduce((sum, b) => sum + b.current_balance, 0);
   const firstName = user?.full_name?.split(' ')[0] || 'there';
   const recentActivity = deposits
-    .filter((d) => d.status === 'completed' || d.status === 'failed')
+    .filter((d) => d.status === 'completed' || d.status === 'failed' || d.status === 'processing')
     .slice(0, 5);
 
   async function onRefresh() {
@@ -521,6 +531,24 @@ const styles = StyleSheet.create({
     fontSize: FontSize.sm,
     color: Colors.text.muted,
     marginTop: 1,
+  },
+  pendingTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing[2],
+  },
+  autoDetectedBadge: {
+    backgroundColor: `${Colors.primary}20`,
+    paddingHorizontal: Spacing[2],
+    paddingVertical: 2,
+    borderRadius: BorderRadius.badge,
+  },
+  autoDetectedText: {
+    fontFamily: FontFamily.bold,
+    fontSize: 10,
+    color: Colors.primary,
+    textTransform: 'uppercase',
+    letterSpacing: LetterSpacing.wide,
   },
   pendingRight: {
     flexDirection: 'row',

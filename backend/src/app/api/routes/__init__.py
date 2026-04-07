@@ -5,6 +5,7 @@ from app.api.routes.deposits import router as deposits_router
 from app.api.routes.split_plans import router as split_plans_router
 from app.api.routes.split_templates import router as split_templates_router
 from app.api.routes.users import router as users_router
+from app.api.routes.webhooks import router as webhooks_router
 
 __all__ = [
     "auth_router",
@@ -14,4 +15,5 @@ __all__ = [
     "deposits_router",
     "split_plans_router",
     "split_templates_router",
+    "webhooks_router",
 ]

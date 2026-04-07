@@ -34,11 +34,17 @@ async def get_deposits_by_user(
 async def get_pending_deposits(
     session: AsyncSession, user_id: str
 ) -> list[Deposit]:
+    """Return deposits awaiting user action: manually-created pending, auto-detected, and auto-plan pending review."""
+    actionable_statuses = [
+        DepositStatus.PENDING.value,
+        DepositStatus.DETECTED.value,
+        DepositStatus.PENDING_REVIEW.value,
+    ]
     result = await session.execute(
         select(Deposit)
         .where(
             Deposit.user_id == user_id,
-            Deposit.status == DepositStatus.PENDING.value,
+            Deposit.status.in_(actionable_statuses),
         )
         .order_by(Deposit.detected_at.desc())
     )

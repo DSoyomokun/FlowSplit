@@ -14,6 +14,8 @@ class DepositStatus(str, Enum):
     PROCESSING = "processing"
     COMPLETED = "completed"
     FAILED = "failed"
+    DETECTED = "detected"          # Auto-detected from Plaid, no template applied
+    PENDING_REVIEW = "pending_review"  # Auto-detected + split plan auto-applied, awaiting confirmation
 
 
 class Deposit(Base):
@@ -37,6 +39,7 @@ class Deposit(Base):
     amount: Mapped[float] = mapped_column(Numeric(12, 2))
     source: Mapped[str | None] = mapped_column(String(255), nullable=True)
     description: Mapped[str | None] = mapped_column(Text, nullable=True)
+    plaid_transaction_id: Mapped[str | None] = mapped_column(String(255), nullable=True, unique=True)
     status: Mapped[str] = mapped_column(
         String(20), default=DepositStatus.PENDING.value
     )

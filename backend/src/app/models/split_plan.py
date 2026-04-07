@@ -35,6 +35,7 @@ class SplitPlan(Base):
     status: Mapped[str] = mapped_column(
         String(20), default=SplitPlanStatus.DRAFT.value
     )
+    source: Mapped[str] = mapped_column(String(20), default="manual")  # 'manual' | 'auto'
     approved_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True),
         nullable=True,

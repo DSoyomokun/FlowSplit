@@ -49,6 +49,7 @@ class Settings(BaseSettings):
     plaid_client_id: str = ""
     plaid_secret: str = ""
     plaid_environment: str = "sandbox"  # sandbox, development, production
+    plaid_webhook_secret: str = ""  # Used to enable strict JWT verification in production
 
     # Pushpay (for external giving)
     pushpay_api_key: str = ""

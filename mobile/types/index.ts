@@ -35,7 +35,7 @@ export interface Deposit {
   amount: number;
   source: string | null;
   description: string | null;
-  status: 'pending' | 'processing' | 'completed' | 'failed';
+  status: 'pending' | 'processing' | 'completed' | 'failed' | 'detected' | 'pending_review';
   detected_at: string;
   processed_at: string | null;
   created_at: string;
