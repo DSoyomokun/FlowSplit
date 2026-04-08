@@ -345,6 +345,74 @@ class PlaidService:
         }
 
     # -------------------------------------------------------------------------
+    # Transfers
+    # -------------------------------------------------------------------------
+
+    async def create_plaid_transfer(
+        self,
+        access_token: str,
+        account_id: str,
+        amount: float,
+        description: str,
+        idempotency_key: str,
+    ) -> str:
+        """
+        Create an ACH debit transfer via Plaid Transfer API.
+
+        Plaid Transfer requires two steps:
+          1. Authorization — checks eligibility and risk
+          2. Transfer create — initiates the ACH
+
+        Returns the Plaid transfer_id for status tracking.
+        Raises on authorization denial or API error.
+        """
+        from plaid.model.transfer_authorization_create_request import (
+            TransferAuthorizationCreateRequest,
+        )
+        from plaid.model.transfer_authorization_user_in_request import (
+            TransferAuthorizationUserInRequest,
+        )
+        from plaid.model.transfer_create_request import TransferCreateRequest
+        from plaid.model.transfer_network import TransferNetwork
+        from plaid.model.transfer_type import TransferType
+        from plaid.model.ach_class import ACHClass
+
+        client = self._ensure_client()
+
+        # Step 1: Authorize
+        auth_request = TransferAuthorizationCreateRequest(
+            access_token=access_token,
+            account_id=account_id,
+            type=TransferType("debit"),
+            network=TransferNetwork("ach"),
+            amount=f"{amount:.2f}",
+            ach_class=ACHClass("ppd"),
+            user=TransferAuthorizationUserInRequest(legal_name="FlowSplit User"),
+            idempotency_key=idempotency_key,
+        )
+        auth_response = await asyncio.to_thread(
+            client.transfer_authorization_create, auth_request
+        )
+        authorization = auth_response.authorization
+        if authorization.decision != "approved":
+            raise ValueError(
+                f"Plaid transfer authorization denied: {authorization.decision_rationale}"
+            )
+
+        # Step 2: Create transfer
+        transfer_request = TransferCreateRequest(
+            access_token=access_token,
+            account_id=account_id,
+            authorization_id=authorization.id,
+            description=description[:15],  # Plaid max 15 chars
+            idempotency_key=idempotency_key,
+        )
+        transfer_response = await asyncio.to_thread(
+            client.transfer_create, transfer_request
+        )
+        return transfer_response.transfer.id
+
+    # -------------------------------------------------------------------------
     # Webhook Handlers
     # -------------------------------------------------------------------------
 

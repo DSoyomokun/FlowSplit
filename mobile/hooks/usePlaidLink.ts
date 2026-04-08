@@ -13,10 +13,24 @@ export function usePlaidLink(onSuccess?: (accounts: BankAccount[]) => void) {
       setError(null);
 
       // 1. Get link token from our backend
-      const { link_token } = await api.createLinkToken();
+      let link_token: string;
+      try {
+        const res = await api.createLinkToken();
+        link_token = res.link_token;
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Failed to get link token');
+        setIsLoading(false);
+        return;
+      }
 
-      // 2. Create the Plaid Link configuration
-      create({ token: link_token });
+      // 2. Create the Plaid Link configuration (must await before open)
+      try {
+        await create({ token: link_token });
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Failed to initialize Plaid');
+        setIsLoading(false);
+        return;
+      }
 
       // 3. Open Plaid Link
       const handleSuccess = async (success: LinkSuccess) => {

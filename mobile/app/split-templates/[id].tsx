@@ -102,7 +102,11 @@ export default function EditTemplateScreen() {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     setItems((prev) => [
       ...prev,
-      { bucket, allocation_type: 'percentage', allocation_value: '10' },
+      {
+        bucket,
+        allocation_type: (bucket.bucket_type as AllocationType) ?? 'percentage',
+        allocation_value: String(bucket.allocation_value ?? 10),
+      },
     ]);
     setShowBucketPicker(false);
   };

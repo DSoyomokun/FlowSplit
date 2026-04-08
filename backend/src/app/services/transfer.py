@@ -12,6 +12,9 @@ from enum import Enum
 from typing import Any
 from uuid import uuid4
 
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
+
 from app.core.config import settings
 
 
@@ -79,46 +82,101 @@ class TransferService:
         bucket_id: str,
         amount: float,
         deposit_id: str,
+        session: AsyncSession | None = None,
+        source_bank_account_id: str | None = None,
+        destination_account_id: str | None = None,
         method: TransferMethod = TransferMethod.ACH,
     ) -> TransferResult:
         """
-        Execute a transfer to a bucket's destination account.
+        Execute an ACH transfer from the deposit's source account to the
+        bucket's destination bank account via Plaid Transfer.
 
-        Args:
-            bucket_id: Target bucket ID
-            amount: Amount to transfer
-            deposit_id: Source deposit ID
-            method: Transfer method to use
-
-        Returns:
-            TransferResult with success status and transaction details
+        Falls back to a simulated success when Plaid is not configured
+        (sandbox / development without Transfer product).
         """
         logger.info(
-            f"Executing transfer: bucket={bucket_id}, "
-            f"amount={amount}, method={method.value}"
+            "Executing transfer: bucket=%s amount=%.2f deposit=%s",
+            bucket_id, amount, deposit_id,
         )
 
-        try:
-            # In production, this would:
-            # 1. Look up the bucket's destination account
-            # 2. Verify sufficient funds
-            # 3. Initiate the transfer via Plaid or bank API
-            # 4. Return transaction ID for tracking
+        # If we have all the info needed for a real Plaid transfer, attempt it
+        if session and source_bank_account_id and destination_account_id:
+            return await self._execute_plaid_transfer(
+                session=session,
+                source_bank_account_id=source_bank_account_id,
+                destination_account_id=destination_account_id,
+                amount=amount,
+                deposit_id=deposit_id,
+            )
 
-            # Simulated transfer for development
-            transaction_id = f"txn_{uuid4().hex[:12]}"
+        # Fallback: simulate success (no Plaid Transfer product / dev mode)
+        logger.warning(
+            "execute_transfer: missing session or account IDs — using simulated transfer"
+        )
+        return TransferResult(
+            success=True,
+            transaction_id=f"sim_{uuid4().hex[:12]}",
+            status=TransferStatus.COMPLETED,
+        )
 
-            # Simulate processing delay
-            # In production, transfers are async and status is updated via webhooks
+    async def _execute_plaid_transfer(
+        self,
+        session: AsyncSession,
+        source_bank_account_id: str,
+        destination_account_id: str,
+        amount: float,
+        deposit_id: str,
+    ) -> TransferResult:
+        """Call Plaid Transfer API to move funds between linked accounts."""
+        from app.models.bank_account import BankAccount
+        from app.services.plaid import plaid_service
 
+        if plaid_service.client is None:
+            logger.warning("Plaid client not configured — using simulated transfer")
             return TransferResult(
                 success=True,
-                transaction_id=transaction_id,
+                transaction_id=f"sim_{uuid4().hex[:12]}",
                 status=TransferStatus.COMPLETED,
             )
 
+        try:
+            # Load source account (holds the access_token)
+            source_result = await session.execute(
+                select(BankAccount).where(BankAccount.id == source_bank_account_id)
+            )
+            source_acct = source_result.scalar_one_or_none()
+            if not source_acct or not source_acct.plaid_access_token:
+                return TransferResult(
+                    success=False,
+                    error="Source bank account not found or missing access token",
+                    status=TransferStatus.FAILED,
+                )
+
+            # Load destination account (to get plaid_account_id for description)
+            dest_result = await session.execute(
+                select(BankAccount).where(BankAccount.id == destination_account_id)
+            )
+            dest_acct = dest_result.scalar_one_or_none()
+            dest_name = dest_acct.name if dest_acct else "destination"
+
+            idempotency_key = f"{deposit_id}-{source_bank_account_id}"
+            plaid_transfer_id = await plaid_service.create_plaid_transfer(
+                access_token=source_acct.plaid_access_token,
+                account_id=source_acct.plaid_account_id,
+                amount=amount,
+                description=f"FlowSplit→{dest_name}"[:15],
+                idempotency_key=idempotency_key,
+            )
+
+            logger.info("Plaid transfer created: %s", plaid_transfer_id)
+            return TransferResult(
+                success=True,
+                transaction_id=plaid_transfer_id,
+                status=TransferStatus.PENDING,  # ACH settles async
+            )
+
         except Exception as e:
-            logger.error(f"Transfer failed: {e}")
+            logger.error("Plaid transfer failed: %s", e)
             return TransferResult(
                 success=False,
                 error=str(e),

@@ -20,6 +20,7 @@ export interface Bucket {
   target_amount: number | null;
   current_balance: number;
   destination_type: 'internal_transfer' | 'external_link' | null;
+  destination_account_id: string | null;
   external_url: string | null;
   external_name: string | null;
   sort_order: number;

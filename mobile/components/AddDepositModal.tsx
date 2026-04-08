@@ -19,7 +19,6 @@ import { Ionicons } from '@expo/vector-icons';
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
-  withSpring,
   withTiming,
 } from 'react-native-reanimated';
 
@@ -27,7 +26,7 @@ import { Colors } from '@/constants/colors';
 import { FontFamily, FontSize } from '@/constants/typography';
 import { BorderRadius, Spacing } from '@/constants/spacing';
 import { Shadows } from '@/constants/shadows';
-import { SpringConfig, Duration } from '@/constants/animations';
+import { Duration } from '@/constants/animations';
 import { Button } from './Button';
 import { AmountInput } from './AmountInput';
 
@@ -52,7 +51,7 @@ export function AddDepositModal({
 
   useEffect(() => {
     if (visible) {
-      translateY.value = withSpring(0, SpringConfig.bouncy);
+      translateY.value = withTiming(0, { duration: Duration.normal });
       opacity.value = withTiming(1, { duration: Duration.normal });
     } else {
       translateY.value = withTiming(300, { duration: Duration.fast });

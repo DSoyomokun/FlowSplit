@@ -5,7 +5,7 @@
  * Stories: 53, 54, 55, 56, 57
  */
 
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import {
   View,
   Text,
@@ -40,7 +40,8 @@ import {
   EmptyBuckets,
 } from '@/components';
 import { useBuckets } from '@/hooks';
-import type { Bucket } from '@/types';
+import * as api from '@/services/api';
+import type { Bucket, BankAccount } from '@/types';
 
 interface BucketConfig {
   id: string;
@@ -59,19 +60,24 @@ interface BucketConfig {
   };
 }
 
-function mapBucket(bucket: Bucket, index: number): BucketConfig {
+function mapBucket(bucket: Bucket, index: number, bankAccounts: BankAccount[]): BucketConfig {
+  let destination: BucketConfig['destination'];
+  if (bucket.destination_type === 'external_link') {
+    destination = { name: bucket.external_name || 'External Link', type: 'external' as const };
+  } else if (bucket.destination_type === 'internal_transfer') {
+    const acct = bankAccounts.find((a) => a.id === bucket.destination_account_id);
+    const name = acct
+      ? `${acct.name}${acct.mask ? ` ••••${acct.mask}` : ''}`
+      : 'Internal Transfer';
+    destination = { name, type: 'bank' as const };
+  }
   return {
     id: bucket.id,
     name: bucket.name,
     percentage: bucket.bucket_type === 'percentage' ? bucket.allocation_value : 10,
     color: bucket.color || BucketColors[index % BucketColors.length],
     icon: bucket.emoji || undefined,
-    destination:
-      bucket.destination_type === 'external_link'
-        ? { name: bucket.external_name || 'External Link', type: 'external' as const }
-        : bucket.destination_type === 'internal_transfer'
-        ? { name: 'Internal Transfer', type: 'bank' as const }
-        : undefined,
+    destination,
   };
 }
 
@@ -79,7 +85,12 @@ export default function BucketConfigurationScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { buckets: rawBuckets, isLoading, refetch, updateBucket } = useBuckets();
+  const [bankAccounts, setBankAccounts] = useState<BankAccount[]>([]);
   const [isRefreshing, setIsRefreshing] = useState(false);
+
+  useEffect(() => {
+    api.getBankAccounts().then(setBankAccounts).catch(() => {});
+  }, []);
 
   // Delivery method modal state
   const [editingBucketId, setEditingBucketId] = useState<string | null>(null);
@@ -88,7 +99,7 @@ export default function BucketConfigurationScreen() {
   const [externalName, setExternalName] = useState('');
   const [isSaving, setIsSaving] = useState(false);
 
-  const buckets: BucketConfig[] = rawBuckets.map(mapBucket);
+  const buckets: BucketConfig[] = rawBuckets.map((b, i) => mapBucket(b, i, bankAccounts));
 
   const handleRefresh = async () => {
     setIsRefreshing(true);

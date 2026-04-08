@@ -84,6 +84,9 @@ class SplitAction(Base):
         DateTime(timezone=True),
         nullable=True,
     )
+    plaid_transfer_id: Mapped[str | None] = mapped_column(
+        String(255), nullable=True, index=True
+    )
 
     # Relationships
     split_plan: Mapped["SplitPlan"] = relationship(

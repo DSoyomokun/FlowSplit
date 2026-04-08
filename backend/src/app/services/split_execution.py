@@ -209,13 +209,18 @@ class SplitExecutionService:
                     )
 
                 # Execute bank transfer
+                dest_account_id = getattr(bucket, 'destination_account_id', None) if bucket else None
                 transfer_result = await transfer_service.execute_transfer(
                     bucket_id=action.bucket_id,
                     amount=amount,
                     deposit_id=deposit.id,
+                    session=session,
+                    source_bank_account_id=deposit.bank_account_id,
+                    destination_account_id=dest_account_id,
                 )
 
                 if transfer_result.success:
+                    action.plaid_transfer_id = transfer_result.transaction_id
                     await mark_action_executed(session, action)
                     return ActionExecutionResult(
                         action_id=action.id,

@@ -13,6 +13,7 @@ class BucketBase(BaseModel):
     allocation_value: float = Field(ge=0)
     target_amount: float | None = None
     destination_type: DeliveryMethod | None = DeliveryMethod.INTERNAL_TRANSFER
+    destination_account_id: str | None = None
     external_url: str | None = None
     external_name: str | None = None
 
@@ -31,6 +32,7 @@ class BucketUpdate(BaseModel):
     sort_order: int | None = None
     is_active: bool | None = None
     destination_type: DeliveryMethod | None = None
+    destination_account_id: str | None = None
     external_url: str | None = None
     external_name: str | None = None
 
