@@ -416,7 +416,7 @@ Complete breakdown of all work required to ship FlowSplit.
   - Exit flow confirmation
 
 ### 5.2 Deep Linking
-- [ ] **STORY-071**: Configure deep links for deposits
+- [x] **STORY-071**: Configure deep links for deposits
   - `flowsplit://deposit/123/allocate`
   - Handle push notification navigation
 
@@ -491,14 +491,14 @@ Complete breakdown of all work required to ship FlowSplit.
   - Manual action required notification
 
 ### 7.3 External Integrations
-- [ ] **STORY-083**: Design Plaid integration architecture
+- [x] **STORY-083**: Design Plaid integration architecture
   - Account linking flow
   - Transaction webhooks
   - Balance checks
 
-- [ ] **STORY-084**: Design transfer execution architecture
+- [x] **STORY-084**: Design transfer execution architecture
   - Bank transfer API integration
-  - External link generation (Pushpay, etc.)
+  - External link generation with `{{amount}}` replacement
   - Status tracking
 
 ---
@@ -620,13 +620,13 @@ Complete breakdown of all work required to ship FlowSplit.
 | 2. Design System | 17 | 17 | 0 | P0 |
 | 3. Feature Components | 17 | 17 | 0 | P0 |
 | 4. Screen Implementation | 25 | 25 | 0 | P0 |
-| 5. Navigation & Flow | 4 | 3 | 1 | P0 |
+| 5. Navigation & Flow | 4 | 4 | 0 | P0 |
 | 6. State Management | 5 | 5 | 0 | P0 |
-| 7. Backend Completion | 8 | 6 | 2 | P1 |
+| 7. Backend Completion | 8 | 8 | 0 | P1 |
 | 8. Polish & UX | 6 | 1 | 5 | P2 |
 | 9. Testing | 7 | 0 | 7 | P2 |
 | 10. Deployment | 5 | 0 | 5 | P1 |
-| **TOTAL** | **105** | **85** | **20** | |
+| **TOTAL** | **105** | **88** | **17** | |
 
 
 ---

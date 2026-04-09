@@ -396,6 +396,8 @@ const styles = StyleSheet.create({
   // Balance Card
   balanceCard: {
     backgroundColor: Colors.primary,
+    marginHorizontal: Spacing.page,
+    borderRadius: BorderRadius.card,
     paddingHorizontal: Spacing.page,
     paddingTop: Spacing[8],
     paddingBottom: Spacing[10],

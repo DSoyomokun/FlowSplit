@@ -16,6 +16,8 @@ import {
   Platform,
   Alert,
   ActivityIndicator,
+  Modal,
+  FlatList,
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -29,6 +31,7 @@ import { Shadows } from '@/constants/shadows';
 import { Header, Button } from '@/components';
 import { useBuckets } from '@/hooks';
 import * as api from '@/services/api';
+import type { BankAccount } from '@/types';
 
 const PALETTE_COLORS = [
   '#0EA5A5',
@@ -107,9 +110,16 @@ export default function EditBucketScreen() {
   const [externalNameFocused, setExternalNameFocused] = useState(false);
   const [initialized, setInitialized] = useState(false);
 
+  const [bankAccounts, setBankAccounts] = useState<BankAccount[]>([]);
+  const [selectedAccountId, setSelectedAccountId] = useState<string | null>(null);
+  const [showAccountPicker, setShowAccountPicker] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    api.getBankAccounts().then(setBankAccounts).catch(() => {});
+  }, []);
 
   const bucket = buckets.find((b) => b.id === id);
 
@@ -129,6 +139,7 @@ export default function EditBucketScreen() {
       );
       setExternalUrl(bucket.external_url || '');
       setExternalName(bucket.external_name || '');
+      setSelectedAccountId(bucket.destination_account_id || null);
       setInitialized(true);
     }
   }, [bucket, initialized]);
@@ -138,13 +149,16 @@ export default function EditBucketScreen() {
     deliveryType !== 'external_link' ||
     (externalUrl.trim().length > 0 && externalName.trim().length > 0);
 
+  const internalTransferValid =
+    deliveryType !== 'internal_transfer' || selectedAccountId !== null;
   const isFormValid =
     name.trim().length > 0 &&
     !isNaN(parsedValue) &&
     parsedValue > 0 &&
     (allocationType === 'fixed' || parsedValue <= 100) &&
     deliveryType !== null &&
-    externalLinkValid;
+    externalLinkValid &&
+    internalTransferValid;
 
   const handleSave = async () => {
     if (!isFormValid || !id) return;
@@ -157,6 +171,7 @@ export default function EditBucketScreen() {
         bucket_type: allocationType,
         allocation_value: parsedValue,
         destination_type: deliveryType,
+        destination_account_id: deliveryType === 'internal_transfer' ? selectedAccountId : null,
         external_url: deliveryType === 'external_link' ? externalUrl.trim() : null,
         external_name: deliveryType === 'external_link' ? externalName.trim() : null,
       });
@@ -350,6 +365,41 @@ export default function EditBucketScreen() {
             />
           </View>
 
+          {/* Internal transfer — bank account picker */}
+          {deliveryType === 'internal_transfer' && (
+            <View style={[styles.card, { marginTop: Spacing[3] }]}>
+              <Text style={styles.fieldLabel}>Destination Account</Text>
+              {bankAccounts.length === 0 ? (
+                <Text style={styles.fieldHint}>No linked bank accounts found. Add one in Settings.</Text>
+              ) : (
+                <Pressable
+                  style={styles.accountPickerRow}
+                  onPress={() => setShowAccountPicker(true)}
+                >
+                  {selectedAccountId ? (() => {
+                    const acct = bankAccounts.find((a) => a.id === selectedAccountId)!;
+                    return (
+                      <>
+                        <View style={styles.accountInfo}>
+                          <Text style={styles.accountName}>{acct.name}</Text>
+                          <Text style={styles.accountMeta}>
+                            {acct.institution_name}{acct.mask ? ` •••• ${acct.mask}` : ''}
+                          </Text>
+                        </View>
+                        <Ionicons name="chevron-forward" size={18} color={Colors.text.muted} />
+                      </>
+                    );
+                  })() : (
+                    <>
+                      <Text style={styles.accountPlaceholder}>Select a bank account</Text>
+                      <Ionicons name="chevron-forward" size={18} color={Colors.text.muted} />
+                    </>
+                  )}
+                </Pressable>
+              )}
+            </View>
+          )}
+
           {/* External link fields — shown inline when external_link is selected */}
           {deliveryType === 'external_link' && (
             <View style={[styles.card, { marginTop: Spacing[3] }]}>
@@ -407,6 +457,53 @@ export default function EditBucketScreen() {
           </Pressable>
         </View>
       </ScrollView>
+
+      {/* Bank account picker modal */}
+      <Modal
+        visible={showAccountPicker}
+        animationType="slide"
+        transparent
+        onRequestClose={() => setShowAccountPicker(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={[styles.modalSheet, { paddingBottom: insets.bottom + Spacing[4] }]}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Choose Account</Text>
+              <Pressable onPress={() => setShowAccountPicker(false)} hitSlop={8}>
+                <Ionicons name="close" size={22} color={Colors.text.muted} />
+              </Pressable>
+            </View>
+            <FlatList
+              data={bankAccounts}
+              keyExtractor={(a) => a.id}
+              renderItem={({ item: acct }) => (
+                <Pressable
+                  style={({ pressed }) => [styles.pickerRow, pressed && { opacity: 0.75 }]}
+                  onPress={() => {
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                    setSelectedAccountId(acct.id);
+                    setShowAccountPicker(false);
+                  }}
+                >
+                  <View style={styles.pickerAccountIcon}>
+                    <Ionicons name="business-outline" size={18} color={Colors.primary} />
+                  </View>
+                  <View style={styles.pickerAccountInfo}>
+                    <Text style={styles.pickerAccountName}>{acct.name}</Text>
+                    <Text style={styles.pickerAccountMeta}>
+                      {acct.institution_name}{acct.mask ? ` •••• ${acct.mask}` : ''}
+                    </Text>
+                  </View>
+                  {selectedAccountId === acct.id && (
+                    <Ionicons name="checkmark-circle" size={20} color={Colors.primary} />
+                  )}
+                </Pressable>
+              )}
+              ItemSeparatorComponent={() => <View style={styles.pickerSeparator} />}
+            />
+          </View>
+        </View>
+      </Modal>
 
       {/* ── Footer ── */}
       <View style={[styles.footer, { paddingBottom: insets.bottom + Spacing[4] }]}>
@@ -591,6 +688,95 @@ const styles = StyleSheet.create({
     fontSize: FontSize.base,
     color: Colors.text.secondary,
     lineHeight: 18,
+  },
+
+  accountPickerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: Colors.background,
+    borderWidth: 1.5,
+    borderColor: Colors.border.light,
+    borderRadius: BorderRadius.xl,
+    paddingHorizontal: Spacing[4],
+    paddingVertical: Spacing[3],
+    gap: Spacing[3],
+  },
+  accountInfo: { flex: 1 },
+  accountName: {
+    fontFamily: FontFamily.bold,
+    fontSize: FontSize.md,
+    color: Colors.text.primary,
+  },
+  accountMeta: {
+    fontFamily: FontFamily.medium,
+    fontSize: FontSize.sm,
+    color: Colors.text.muted,
+    marginTop: 2,
+  },
+  accountPlaceholder: {
+    flex: 1,
+    fontFamily: FontFamily.medium,
+    fontSize: FontSize.md,
+    color: Colors.text.muted,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: Colors.overlay,
+    justifyContent: 'flex-end',
+  },
+  modalSheet: {
+    backgroundColor: Colors.card,
+    borderTopLeftRadius: BorderRadius.card,
+    borderTopRightRadius: BorderRadius.card,
+    paddingTop: Spacing[5],
+    maxHeight: '60%',
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: Spacing.page,
+    paddingBottom: Spacing[4],
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.border.light,
+  },
+  modalTitle: {
+    fontFamily: FontFamily.bold,
+    fontSize: FontSize.lg,
+    color: Colors.text.primary,
+  },
+  pickerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: Spacing.page,
+    paddingVertical: Spacing[4],
+    gap: Spacing[3],
+  },
+  pickerAccountIcon: {
+    width: 36,
+    height: 36,
+    borderRadius: BorderRadius.lg,
+    backgroundColor: Colors.primaryLight,
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexShrink: 0,
+  },
+  pickerAccountInfo: { flex: 1 },
+  pickerAccountName: {
+    fontFamily: FontFamily.bold,
+    fontSize: FontSize.md,
+    color: Colors.text.primary,
+  },
+  pickerAccountMeta: {
+    fontFamily: FontFamily.medium,
+    fontSize: FontSize.sm,
+    color: Colors.text.muted,
+    marginTop: 2,
+  },
+  pickerSeparator: {
+    height: 1,
+    backgroundColor: Colors.border.light,
+    marginLeft: Spacing.page + 36 + Spacing[3],
   },
 
   deleteButton: {

@@ -2,6 +2,8 @@
  * Utils barrel export
  */
 
+export { formatCurrency, formatDate, formatAmount, formatPercentage } from './formatting';
+
 export {
   URL_PREFIX,
   linking,

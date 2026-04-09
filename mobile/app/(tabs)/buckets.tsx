@@ -24,14 +24,19 @@ import { BorderRadius, Spacing } from '@/constants/spacing';
 import { Shadows } from '@/constants/shadows';
 import { BucketConfigCard, FloatingActionButton } from '@/components';
 import { useBuckets } from '@/hooks';
-import type { Bucket } from '@/types';
+import * as api from '@/services/api';
+import type { Bucket, BankAccount } from '@/types';
 
-function mapDestination(bucket: Bucket) {
+function mapDestination(bucket: Bucket, bankAccounts: BankAccount[]) {
   if (bucket.destination_type === 'external_link') {
     return { name: bucket.external_name || 'External Link', type: 'external' as const };
   }
   if (bucket.destination_type === 'internal_transfer') {
-    return { name: 'Internal Transfer', type: 'bank' as const };
+    const acct = bankAccounts.find((a) => a.id === bucket.destination_account_id);
+    const name = acct
+      ? `${acct.name}${acct.mask ? ` ••••${acct.mask}` : ''}`
+      : 'Internal Transfer';
+    return { name, type: 'bank' as const };
   }
   return undefined;
 }
@@ -40,6 +45,11 @@ export default function BucketsScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { buckets, isLoading, refetch } = useBuckets();
+  const [bankAccounts, setBankAccounts] = React.useState<BankAccount[]>([]);
+
+  React.useEffect(() => {
+    api.getBankAccounts().then(setBankAccounts).catch(() => {});
+  }, []);
 
   const totalAllocated = buckets
     .filter((b) => b.bucket_type === 'percentage')
@@ -149,7 +159,7 @@ export default function BucketsScreen() {
                 }
                 color={bucket.color || BucketColors[index % BucketColors.length]}
                 icon={bucket.emoji || undefined}
-                destination={mapDestination(bucket)}
+                destination={mapDestination(bucket, bankAccounts)}
                 onMorePress={handleEdit}
               />
             ))}
