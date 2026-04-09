@@ -149,3 +149,20 @@ def test_mixed_fixed_and_percentage_sums_to_total():
     assert result["savings"] == pytest.approx(remaining * 0.30, abs=0.02)
     assert result["rest"] == pytest.approx(remaining * 0.70, abs=0.02)
     assert sum(result.values()) == pytest.approx(1200.0, abs=0.02)
+
+
+def test_rounding_adjustment_applied_on_large_error():
+    """Rounding adjustment kicks in when accumulated error exceeds $0.01.
+
+    3 buckets at 33% each sum to 99% — the $1 remainder is added to the first
+    bucket so the total comes out exactly right.
+    """
+    buckets = [
+        make_bucket("a", BucketType.PERCENTAGE, 33),
+        make_bucket("b", BucketType.PERCENTAGE, 33),
+        make_bucket("c", BucketType.PERCENTAGE, 33),
+    ]
+    result = calculate_allocation(100.0, buckets)
+    assert sum(result.values()) == pytest.approx(100.0, abs=0.001)
+    # First bucket absorbs the $1 remainder (33 + 1 = 34)
+    assert result["a"] == 34.0

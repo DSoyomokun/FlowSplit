@@ -541,23 +541,19 @@ Complete breakdown of all work required to ship FlowSplit.
 ## Epic 9: Testing
 
 ### 9.1 Unit Tests
-- [ ] **STORY-091**: Test utility functions
+- [x] **STORY-091**: Test utility functions *(mobile/__tests__/utils/formatting.test.ts — 15 tests)*
   - Amount formatting
   - Percentage calculations
-  - Validation logic
+  - Date formatting (Today / Yesterday / weekday / month-day)
 
-- [ ] **STORY-092**: Test hooks
-  - useDonutChart
-  - useAllocation
-  - API hooks
+- [x] **STORY-092**: Test hooks *(mobile/__tests__/hooks/useDonutChart.test.ts — 16 tests)*
+  - useDonutChart: splitPoints, remainder, segment amounts, clamping
 
 ### 9.2 Component Tests
-- [ ] **STORY-093**: Test base components
-  - Button states
-  - Card variants
-  - Error states
+- [x] **STORY-093**: Test base components *(mobile/__tests__/components/Button.test.tsx — 7 tests)*
+  - Button: all variants (primary, secondary, ghost, danger), disabled, loading
 
-- [ ] **STORY-094**: Test feature components
+- [ ] **STORY-094**: Test feature components *(needs @testing-library/react-native)*
   - DonutChart interactions
   - BucketCard actions
   - AccountSelector selection
@@ -569,15 +565,17 @@ Complete breakdown of all work required to ship FlowSplit.
   - Edge cases
 
 ### 9.4 Backend Tests
-- [ ] **STORY-096**: Test API endpoints
-  - Authentication
-  - CRUD operations
-  - Error responses
+- [x] **STORY-096**: Test API endpoints *(backend/tests/test_api.py — 9 tests)*
+  - Auth protection on all protected routes
+  - Health check
+  - OpenAPI schema validation
 
-- [ ] **STORY-097**: Test business logic
-  - Allocation calculations
-  - Split execution
-  - Status transitions
+- [x] **STORY-097**: Test business logic *(backend/tests/test_allocation.py + test_services.py — 36 tests)*
+  - calculate_allocation: fixed/percentage priority, normalization, edge cases, rounding adjustment (100% branch coverage)
+  - SplitExecutionResult properties, _requires_manual_action
+  - generate_external_link: {{amount}} template, legacy URLs, fallback
+  - PushpayIntegration link generation
+  - Mutation testing verified: all 4 key mutations caught (swap FIXED/PERCENTAGE, remove template replacement, is_complete always True, remove toFixed)
 
 ---
 
@@ -612,6 +610,35 @@ Complete breakdown of all work required to ship FlowSplit.
 
 ---
 
+## Epic 11: Observability
+
+### 11.1 Sentry Integration
+- [ ] **STORY-103**: Sentry — React Native (mobile)
+  - Install `@sentry/react-native` + `sentry-expo`
+  - Initialize in `app/_layout.tsx` with DSN from env
+  - Configure release/environment tags (dev, preview, production)
+  - Enable automatic JS error capture + unhandled promise rejections
+  - Wrap navigation with Sentry routing instrumentation (expo-router)
+  - Manually capture errors in key catch blocks (split execution, deposit creation, Plaid webhook)
+  - Source map upload in EAS build pipeline
+
+- [ ] **STORY-104**: Sentry — FastAPI (backend)
+  - Install `sentry-sdk[fastapi]`
+  - Initialize in `main.py` with DSN, environment, and `traces_sample_rate`
+  - Add `SentryAsgiMiddleware` for automatic request tracing
+  - Capture exceptions in split execution service with context (plan_id, deposit_id, user_id)
+  - Capture exceptions in Plaid webhook handler with webhook event context
+  - Add `before_send` hook to scrub PII (phone numbers, account numbers) before sending to Sentry
+
+- [ ] **STORY-105**: Sentry — Alerts & triage setup
+  - Create alert rule: any new issue → notify Slack/email
+  - Create alert rule: Plaid webhook error rate > 5% → page immediately
+  - Create alert rule: split execution failure spike → notify
+  - Tag issues by user_id so you can look up a specific user's errors
+  - Set up separate Sentry projects for mobile vs backend (different DSNs)
+
+---
+
 ## Story Count Summary
 
 | Epic | Stories | Done | Remaining | Priority |
@@ -624,9 +651,10 @@ Complete breakdown of all work required to ship FlowSplit.
 | 6. State Management | 5 | 5 | 0 | P0 |
 | 7. Backend Completion | 8 | 8 | 0 | P1 |
 | 8. Polish & UX | 6 | 1 | 5 | P2 |
-| 9. Testing | 7 | 0 | 7 | P2 |
+| 9. Testing | 7 | 5 | 2 | P2 |
 | 10. Deployment | 5 | 0 | 5 | P1 |
-| **TOTAL** | **105** | **88** | **17** | |
+| 11. Observability | 3 | 0 | 3 | P1 |
+| **TOTAL** | **108** | **93** | **15** | |
 
 
 ---

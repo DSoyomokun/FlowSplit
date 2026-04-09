@@ -2,7 +2,7 @@
  * Tests for formatting utilities (Story 091)
  */
 
-import { formatCurrency, formatAmount, formatPercentage } from '@/utils/formatting';
+import { formatCurrency, formatAmount, formatPercentage, formatDate } from '@/utils/formatting';
 
 // ── formatCurrency ────────────────────────────────────────────────────────────
 
@@ -65,5 +65,38 @@ describe('formatPercentage', () => {
   it('respects custom decimal places', () => {
     expect(formatPercentage(10.5, 1)).toBe('10.5%');
     expect(formatPercentage(33.333, 2)).toBe('33.33%');
+  });
+});
+
+// ── formatDate ────────────────────────────────────────────────────────────────
+
+describe('formatDate', () => {
+  beforeEach(() => {
+    jest.useFakeTimers();
+  });
+
+  afterEach(() => {
+    jest.useRealTimers();
+  });
+
+  it('returns "Today" for a date within the same day', () => {
+    jest.setSystemTime(new Date('2026-04-09T12:00:00Z'));
+    expect(formatDate('2026-04-09T08:00:00Z')).toBe('Today');
+  });
+
+  it('returns "Yesterday" for a date 1 day ago', () => {
+    jest.setSystemTime(new Date('2026-04-09T12:00:00Z'));
+    expect(formatDate('2026-04-08T08:00:00Z')).toBe('Yesterday');
+  });
+
+  it('returns a weekday name for dates 2-6 days ago', () => {
+    jest.setSystemTime(new Date('2026-04-09T12:00:00Z')); // Thursday
+    const result = formatDate('2026-04-06T08:00:00Z'); // Monday
+    expect(result).toBe('Mon');
+  });
+
+  it('returns month/day for dates 7+ days ago', () => {
+    jest.setSystemTime(new Date('2026-04-09T12:00:00Z'));
+    expect(formatDate('2026-03-20T08:00:00Z')).toBe('Mar 20');
   });
 });
